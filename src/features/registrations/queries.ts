@@ -1,5 +1,7 @@
 // Contract: getRegistrationsForEvent(eventId), getMyRegistrations().
 import { db } from "@/lib/db";
+import type { Cause } from "@/features/events/types";
+import type { RankUser } from "./rank";
 import { getCurrentUser } from "@/lib/session";
 
 export type RegistrationWithUser = { id: string; userName: string | null; userEmail: string; createdAt: Date };
@@ -54,4 +56,13 @@ export async function getRegistrationState(eventId: string) {
     full: event.capacity !== null && taken >= event.capacity,
     ended: (event.endsAt ?? event.startsAt) < new Date(),
   };
+}
+
+/** Builds the `user` argument for rankEvents from the signed-in user's registrations. Null when signed out. */
+export async function getRankUser(): Promise<RankUser | null> {
+  const mine = await getMyRegistrations();
+  if (mine.length === 0 && !(await getCurrentUser())) return null;
+  const causeCounts: Partial<Record<Cause, number>> = {};
+  for (const r of mine) causeCounts[r.event.cause] = (causeCounts[r.event.cause] ?? 0) + 1;
+  return { causeCounts, registeredEventIds: new Set(mine.map((r) => r.eventId)) };
 }
