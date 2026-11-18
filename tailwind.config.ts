@@ -21,6 +21,18 @@ const config: Config = {
         card: { DEFAULT: "hsl(var(--card))", foreground: "hsl(var(--card-foreground))" },
       },
       borderRadius: { lg: "var(--radius)", md: "calc(var(--radius) - 2px)", sm: "calc(var(--radius) - 4px)" },
+      keyframes: {
+        "fade-up": { from: { opacity: "0", transform: "translateY(18px)" }, to: { opacity: "1", transform: "translateY(0)" } },
+        float: { "0%,100%": { transform: "translateY(0)" }, "50%": { transform: "translateY(-12px)" } },
+        marquee: { from: { transform: "translateX(0)" }, to: { transform: "translateX(-50%)" } },
+        shimmer: { from: { backgroundPosition: "0% 50%" }, to: { backgroundPosition: "200% 50%" } },
+      },
+      animation: {
+        "fade-up": "fade-up 0.8s ease-out both",
+        float: "float 7s ease-in-out infinite",
+        marquee: "marquee 32s linear infinite",
+        shimmer: "shimmer 6s linear infinite",
+      },
     },
   },
   plugins: [animate],
