@@ -3,9 +3,12 @@
 // The extra filter fields (q, sort, page, pageSize) are optional, so existing callers are unaffected.
 import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
+import { getCurrentUser } from "@/lib/session";
 import type { Cause, Event } from "@/features/events/types";
+import { rankEvents } from "@/features/registrations/rank";
+import { getRankUser } from "@/features/registrations/queries";
 
-export type EventSort = "soonest" | "newest";
+export type EventSort = "soonest" | "newest" | "recommended";
 export type EventFilters = {
   cause?: Cause;
   from?: string;
@@ -53,6 +56,32 @@ export async function getEvents(filters: EventFilters = {}): Promise<Event[]> {
 /** Total number of events matching the filters (ignores page/pageSize). */
 export async function countEvents(filters: EventFilters = {}): Promise<number> {
   return db.event.count({ where: buildWhere(filters) });
+}
+
+/**
+ * One page of results plus paging info. For sort=recommended the matching events are fetched first
+ * (respecting the filters), then ranked for the signed-in user, then paginated. Signed-out users
+ * get "soonest" and no user lookup is made.
+ */
+export async function getEventPage(filters: EventFilters, pageSize: number) {
+  const requested = Math.max(1, filters.page ?? 1);
+  const pagesFor = (total: number) => Math.max(1, Math.ceil(total / pageSize));
+
+  if (filters.sort === "recommended") {
+    const user = await getCurrentUser();
+    const rankUser = user ? await getRankUser() : null;
+    const all = await getEvents({ ...filters, sort: "soonest", page: undefined, pageSize: undefined });
+    const ranked = rankUser ? rankEvents(all, rankUser) : all;
+    const pageCount = pagesFor(ranked.length);
+    const page = Math.min(requested, pageCount);
+    return { events: ranked.slice((page - 1) * pageSize, page * pageSize), total: ranked.length, page, pageCount };
+  }
+
+  const total = await countEvents(filters);
+  const pageCount = pagesFor(total);
+  const page = Math.min(requested, pageCount);
+  const events = await getEvents({ ...filters, page, pageSize });
+  return { events, total, page, pageCount };
 }
 
 export async function getEventById(id: string): Promise<Event | null> {

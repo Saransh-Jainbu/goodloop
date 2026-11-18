@@ -88,6 +88,7 @@ export function FilterBar() {
         <select id="sort" value={params.get("sort") ?? "soonest"} onChange={(e) => update({ sort: e.target.value === "soonest" ? "" : e.target.value })} className={selectClass}>
           <option value="soonest">Soonest first</option>
           <option value="newest">Newest listings</option>
+          <option value="recommended">Recommended</option>
         </select>
       </div>
       <Button type="button" variant="outline" className="lg:col-start-6" disabled={!hasFilters} onClick={() => router.push("/events")}>

@@ -4,7 +4,7 @@ import { EventList } from "@/features/discovery/EventList";
 import { FilterBar } from "@/features/discovery/FilterBar";
 import { Pagination } from "@/features/discovery/Pagination";
 import { PAGE_SIZE, parseFilters } from "@/features/discovery/filters";
-import { countEvents, getEvents } from "@/features/discovery/queries";
+import { getEventPage } from "@/features/discovery/queries";
 import { EventsMap } from "@/features/map/EventsMap";
 
 type SearchParams = Record<string, string | string[] | undefined>;
@@ -13,10 +13,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Sea
   const raw = await searchParams;
   const filters = parseFilters(raw);
 
-  const total = await countEvents(filters);
-  const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
-  const page = Math.min(filters.page ?? 1, pageCount);
-  const events = await getEvents({ ...filters, page, pageSize: PAGE_SIZE });
+  const { events, total, page, pageCount } = await getEventPage(filters, PAGE_SIZE);
 
   const filtered = Object.keys(filters).some((k) => k !== "page" && filters[k as keyof typeof filters]);
 
