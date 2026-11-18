@@ -43,7 +43,9 @@ pnpm db:seed                   # admin + demo organiser
 pnpm dev
 ```
 
-Seeded logins: `admin@goodloop.test` / `change-me-123`, `organiser@goodloop.test` / `organiser-123` (dev only).
+Seeded accounts: `admin@goodloop.test` and `organiser@goodloop.test`. There are **no default passwords**: set `SEED_ADMIN_PASSWORD` and `SEED_ORGANISER_PASSWORD` in your `.env` before seeding, or the seed generates random ones and prints them once. Seeding never changes the password of an account that already exists.
+
+To change any account's password (for example on a shared or production database), run `pnpm db:set-password <email>`. It asks for the new password in your terminal, so it never appears in shell history, chat or logs. Run it only against the database you mean to change.
 
 ## Database (Neon)
 - Prod/shared DB lives on Neon. `DATABASE_URL` = pooled connection string (host has `-pooler`); `DIRECT_URL` = direct one, used by `prisma migrate`.

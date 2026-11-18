@@ -13,7 +13,8 @@
     "postinstall": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
-    "db:seed": "prisma db seed"
+    "db:seed": "prisma db seed",
+    "db:set-password": "tsx scripts/set-password.ts"
   },
   "prisma": {
     "schema": "prisma/schema",

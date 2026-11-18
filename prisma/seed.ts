@@ -1,31 +1,40 @@
 // OWNER: Saransh. Run with `pnpm db:seed`. Also seeds demo events.
 import { PrismaClient } from "@prisma/client";
+import { randomBytes } from "node:crypto";
 import bcrypt from "bcryptjs";
 
 const db = new PrismaClient();
 
-async function main() {
-  const email = process.env.SEED_ADMIN_EMAIL ?? "admin@goodloop.test";
-  const password = process.env.SEED_ADMIN_PASSWORD ?? "change-me-123";
-  const passwordHash = await bcrypt.hash(password, 10);
+/**
+ * Creates the account only if it does not exist yet, so seeding never changes an existing password.
+ * No default passwords: use the env var, or generate a random one and print it once.
+ */
+async function ensureUser(
+  who: string,
+  data: { email: string; name: string; role: "ADMIN" | "ORGANISER"; organiserStatus?: "APPROVED" },
+  passwordFromEnv?: string,
+) {
+  if (await db.user.findUnique({ where: { email: data.email } })) {
+    console.log(`${who} already exists (password unchanged)`);
+    return;
+  }
+  const password = passwordFromEnv || randomBytes(12).toString("base64url");
+  if (!passwordFromEnv) console.log(`Generated a password for the ${who} (shown once): ${password}`);
+  await db.user.create({ data: { ...data, passwordHash: await bcrypt.hash(password, 10) } });
+  console.log(`Created the ${who}`);
+}
 
-  await db.user.upsert({
-    where: { email },
-    update: {},
-    create: { email, name: "Admin", passwordHash, role: "ADMIN" },
-  });
-  await db.user.upsert({
-    where: { email: "organiser@goodloop.test" },
-    update: {},
-    create: {
-      email: "organiser@goodloop.test",
-      name: "Demo Organiser",
-      passwordHash: await bcrypt.hash("organiser-123", 10),
-      role: "ORGANISER",
-      organiserStatus: "APPROVED",
-    },
-  });
-  console.log("Seeded admin + demo organiser");
+async function main() {
+  await ensureUser(
+    "admin",
+    { email: process.env.SEED_ADMIN_EMAIL ?? "admin@goodloop.test", name: "Admin", role: "ADMIN" },
+    process.env.SEED_ADMIN_PASSWORD,
+  );
+  await ensureUser(
+    "demo organiser",
+    { email: "organiser@goodloop.test", name: "Demo Organiser", role: "ORGANISER", organiserStatus: "APPROVED" },
+    process.env.SEED_ORGANISER_PASSWORD,
+  );
 
   await seedEvents();
 }
