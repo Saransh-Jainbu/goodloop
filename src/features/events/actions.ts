@@ -169,6 +169,25 @@ export async function duplicateEvent(eventId: string) {
   redirect("/organiser");
 }
 
+export async function declineRegistration(eventId: string, registrationId: string) {
+  const user = await requireApprovedOrganiser();
+
+  const event = await db.event.findFirst({
+    where: { id: eventId, organiserId: user.id },
+  });
+  if (!event) {
+    throw new Error("Unauthorized: you can only manage registrations for your own events.");
+  }
+
+  await db.registration.delete({
+    where: { id: registrationId },
+  });
+
+  revalidatePath(`/organiser/${eventId}/registrations`);
+  revalidatePath("/organiser");
+  revalidatePath(`/events/${eventId}`);
+}
+
 export async function deleteEvent(eventId: string) {
   const user = await requireApprovedOrganiser();
 
