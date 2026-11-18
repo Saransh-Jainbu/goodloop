@@ -21,9 +21,12 @@ export default async function Page() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-semibold">My registrations</h1>
-        <p className="text-sm text-muted-foreground">Events you have registered interest in.</p>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold">My registrations</h1>
+          <p className="text-sm text-muted-foreground">Events you have registered interest in.</p>
+        </div>
+        <Button asChild variant="outline" size="sm"><Link href="/me/profile">Profile</Link></Button>
       </div>
 
       {registrations.length === 0 ? (
