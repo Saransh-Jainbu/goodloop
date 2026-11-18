@@ -1,8 +1,10 @@
+import type { Metadata } from "next";
 import { Hero } from "@/components/landing/Hero";
 import { Features } from "@/components/landing/Features";
 import { HowItWorks } from "@/components/landing/HowItWorks";
 import { FinalCta, Footer, Trust } from "@/components/landing/TrustCtaFooter";
 import { CAUSES } from "@/features/events/types";
+import { SITE_DESCRIPTION, SITE_NAME, siteUrl } from "@/lib/site";
 
 const causeLabel: Record<(typeof CAUSES)[number], string> = {
   ENVIRONMENT: "Environment",
@@ -13,6 +15,27 @@ const causeLabel: Record<(typeof CAUSES)[number], string> = {
   OTHER: "And more",
 };
 
+export const metadata: Metadata = { alternates: { canonical: "/" } };
+
+// Structured data so search engines understand what the site is (and can offer a search box).
+function jsonLd() {
+  const url = siteUrl();
+  return JSON.stringify([
+    { "@context": "https://schema.org", "@type": "Organization", name: SITE_NAME, url, description: SITE_DESCRIPTION },
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      name: SITE_NAME,
+      url,
+      potentialAction: {
+        "@type": "SearchAction",
+        target: `${url}/events?q={search_term_string}`,
+        "query-input": "required name=search_term_string",
+      },
+    },
+  ]).replace(/</g, "\\u003c");
+}
+
 export default function HomePage() {
   // Repeated so the marquee loops seamlessly with translateX(-50%).
   const marquee = [...CAUSES, ...CAUSES, ...CAUSES, ...CAUSES];
@@ -20,6 +43,7 @@ export default function HomePage() {
   // The root layout wraps pages in a centred container; this breaks out so sections run edge to edge.
   return (
     <div className="relative left-1/2 -mt-8 -mb-8 w-screen -translate-x-1/2">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd() }} />
       <Hero />
 
       <section aria-label="Causes" className="border-b bg-background py-6">
