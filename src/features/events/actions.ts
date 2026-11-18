@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { requireApprovedOrganiser } from "@/lib/session";
 import { eventSchema, type EventActionState } from "./schema";
+import { EVENT_STATUSES, type EventStatus } from "./types";
 
 function extractErrors(parsedError: import("zod").ZodError): {
   error: string;
@@ -116,6 +117,28 @@ export async function updateEvent(
   revalidatePath(`/events/${eventId}`);
   revalidatePath("/events");
   redirect("/organiser");
+}
+
+export async function setEventStatus(eventId: string, status: EventStatus) {
+  const user = await requireApprovedOrganiser();
+
+  if (!EVENT_STATUSES.includes(status)) {
+    throw new Error("Invalid event status.");
+  }
+
+  const existing = await db.event.findUnique({ where: { id: eventId } });
+  if (!existing || existing.organiserId !== user.id) {
+    throw new Error("Unauthorized: you can only update your own events.");
+  }
+
+  await db.event.update({
+    where: { id: eventId },
+    data: { status },
+  });
+
+  revalidatePath("/organiser");
+  revalidatePath("/events");
+  revalidatePath(`/events/${eventId}`);
 }
 
 export async function deleteEvent(eventId: string) {

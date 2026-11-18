@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DeleteEventButton } from "@/features/events/DeleteEventButton";
+import { EventStatusButton } from "@/features/events/EventStatusButton";
 import { getOrganiserEvents } from "@/features/events/queries";
 import { requireRole } from "@/lib/session";
 
@@ -229,6 +230,10 @@ export default async function OrganiserPage({
                       </div>
 
                       <div className="flex flex-wrap items-center justify-end gap-2 border-t pt-3">
+                        <EventStatusButton
+                          eventId={event.id}
+                          currentStatus={event.status}
+                        />
                         <Link href={`/organiser/${event.id}/registrations`}>
                           <Button variant="outline" size="sm">
                             Registrations ({event._count.registrations})
