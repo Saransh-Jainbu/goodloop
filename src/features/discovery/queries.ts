@@ -4,8 +4,13 @@
 import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import type { Cause, Event } from "@/features/events/types";
+import { rankEvents } from "@/features/registrations/rank";
+import { getRankUser } from "@/features/registrations/queries";
 
-export type EventSort = "soonest" | "newest";
+/** Max events loaded for ranking: the soonest N matches, so the in-memory ranking stays cheap. */
+export const RECOMMENDED_CAP = 200;
+
+export type EventSort = "soonest" | "newest" | "recommended";
 export type EventFilters = {
   cause?: Cause;
   from?: string;
@@ -53,6 +58,32 @@ export async function getEvents(filters: EventFilters = {}): Promise<Event[]> {
 /** Total number of events matching the filters (ignores page/pageSize). */
 export async function countEvents(filters: EventFilters = {}): Promise<number> {
   return db.event.count({ where: buildWhere(filters) });
+}
+
+/**
+ * One page of results plus paging info. For sort=recommended the matching events are fetched first
+ * (respecting the filters, capped at RECOMMENDED_CAP), then ranked for the signed-in user, then
+ * paginated. Signed-out users get "soonest" and `needsLogin: true` so the page can say why.
+ */
+export async function getEventPage(filters: EventFilters, pageSize: number) {
+  const requested = Math.max(1, filters.page ?? 1);
+  const pagesFor = (total: number) => Math.max(1, Math.ceil(total / pageSize));
+
+  if (filters.sort === "recommended") {
+    const rankUser = await getRankUser(); // null when signed out
+    const all = await getEvents({ ...filters, sort: "soonest", page: 1, pageSize: RECOMMENDED_CAP });
+    const ranked = rankUser ? rankEvents(all, rankUser) : all;
+    const pageCount = pagesFor(ranked.length);
+    const page = Math.min(requested, pageCount);
+    const events = ranked.slice((page - 1) * pageSize, page * pageSize);
+    return { events, total: ranked.length, page, pageCount, needsLogin: !rankUser };
+  }
+
+  const total = await countEvents(filters);
+  const pageCount = pagesFor(total);
+  const page = Math.min(requested, pageCount);
+  const events = await getEvents({ ...filters, page, pageSize });
+  return { events, total, page, pageCount, needsLogin: false };
 }
 
 export async function getEventById(id: string): Promise<Event | null> {

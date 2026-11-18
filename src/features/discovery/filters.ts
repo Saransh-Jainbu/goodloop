@@ -13,7 +13,7 @@ const schema = z.object({
   to: date.optional().catch(undefined),
   location: z.string().trim().max(100).optional().catch(undefined),
   q: z.string().trim().max(100).optional().catch(undefined),
-  sort: z.enum(["soonest", "newest"]).optional().catch(undefined),
+  sort: z.enum(["soonest", "newest", "recommended"]).optional().catch(undefined),
   page: z.coerce.number().int().min(1).max(1000).optional().catch(undefined),
 });
 
