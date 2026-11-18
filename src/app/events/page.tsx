@@ -1,30 +1,37 @@
-// OWNER: Anousha. /events: filterable list of opportunities.
+// OWNER: Anousha. /events: searchable, filterable, paginated list of opportunities.
 import { Suspense } from "react";
 import { EventList } from "@/features/discovery/EventList";
 import { FilterBar } from "@/features/discovery/FilterBar";
-import { parseFilters } from "@/features/discovery/filters";
-import { getEvents } from "@/features/discovery/queries";
+import { Pagination } from "@/features/discovery/Pagination";
+import { PAGE_SIZE, parseFilters } from "@/features/discovery/filters";
+import { countEvents, getEvents } from "@/features/discovery/queries";
 import { EventsMap } from "@/features/map/EventsMap";
 
-export default async function Page({
-  searchParams,
-}: {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-}) {
-  const filters = parseFilters(await searchParams);
-  const events = await getEvents(filters);
+type SearchParams = Record<string, string | string[] | undefined>;
+
+export default async function Page({ searchParams }: { searchParams: Promise<SearchParams> }) {
+  const raw = await searchParams;
+  const filters = parseFilters(raw);
+
+  const total = await countEvents(filters);
+  const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const page = Math.min(filters.page ?? 1, pageCount);
+  const events = await getEvents({ ...filters, page, pageSize: PAGE_SIZE });
+
+  const filtered = Object.keys(filters).some((k) => k !== "page" && filters[k as keyof typeof filters]);
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">Events</h1>
+      <h1 className="font-heading text-2xl font-semibold">Events</h1>
       <Suspense>
         <FilterBar />
       </Suspense>
       <p className="text-sm text-muted-foreground" aria-live="polite">
-        {events.length} {events.length === 1 ? "opportunity" : "opportunities"} found
+        {total} {total === 1 ? "opportunity" : "opportunities"} found
       </p>
-      <EventList events={events} />
-      <EventsMap events={events} />
+      <EventList events={events} filtered={filtered} />
+      <Pagination page={page} pageCount={pageCount} searchParams={raw} />
+      {events.length > 0 && <EventsMap events={events} />}
     </div>
   );
 }
