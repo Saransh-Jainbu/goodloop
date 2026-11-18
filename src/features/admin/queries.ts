@@ -15,3 +15,27 @@ export function getAllEvents() {
     orderBy: { createdAt: "desc" },
   });
 }
+
+export async function getStats() {
+  const [users, organisers, pendingOrganisers, events, registrations] = await Promise.all([
+    db.user.count({ where: { role: "USER" } }),
+    db.user.count({ where: { role: "ORGANISER" } }),
+    db.user.count({ where: { role: "ORGANISER", organiserStatus: "PENDING" } }),
+    db.event.count(),
+    db.registration.count(),
+  ]);
+  return { users, organisers, pendingOrganisers, events, registrations };
+}
+
+/** Newest users first; optional search on name or email (case-insensitive). Capped to keep the page light. */
+export function getUsers(q?: string) {
+  const needle = q?.trim();
+  return db.user.findMany({
+    where: needle
+      ? { OR: [{ name: { contains: needle, mode: "insensitive" } }, { email: { contains: needle, mode: "insensitive" } }] }
+      : undefined,
+    select: { id: true, name: true, email: true, role: true, organiserStatus: true, createdAt: true },
+    orderBy: { createdAt: "desc" },
+    take: 100,
+  });
+}
