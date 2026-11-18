@@ -1,5 +1,4 @@
-// OWNER: Aditya  (starter file: fill in the real model, then run `pnpm db:migrate --name event`)
-// Planned fields: description, cause, startsAt, endsAt, address, lat, lng, capacity, status
+// OWNER: Aditya
 enum Cause {
   ENVIRONMENT
   EDUCATION
@@ -9,13 +8,27 @@ enum Cause {
   OTHER
 }
 
+enum EventStatus {
+  DRAFT
+  PUBLISHED
+  CANCELLED
+}
+
 model Event {
-  id          String   @id @default(cuid())
+  id          String      @id @default(cuid())
   title       String
-  cause       Cause    @default(OTHER)
+  description String
+  cause       Cause       @default(OTHER)
+  startsAt    DateTime
+  endsAt      DateTime?
+  address     String
+  lat         Float
+  lng         Float
+  capacity    Int?
+  status      EventStatus @default(PUBLISHED)
   organiserId String
-  organiser   User     @relation(fields: [organiserId], references: [id], onDelete: Cascade)
-  createdAt   DateTime @default(now())
+  organiser   User        @relation(fields: [organiserId], references: [id], onDelete: Cascade)
+  createdAt   DateTime    @default(now())
 
   registrations Registration[]
 }
