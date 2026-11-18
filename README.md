@@ -3,6 +3,36 @@
 Volunteering discovery platform (Next.js App Router, TypeScript, Prisma, Auth.js, Tailwind + shadcn/ui, Leaflet).
 Team rules, file ownership and contracts: see `../WORK_SPLIT.md`.
 
+## About the project
+GoodLoop connects volunteers with local volunteering opportunities.
+- **Volunteers** browse and filter events (by cause, date, location), see them on a map, and register interest.
+- **Organisers** create and manage their events and see who registered. They must be approved by an admin first.
+- **Admins** approve organisers and remove inappropriate events.
+
+```mermaid
+flowchart LR
+    V([Volunteer]) -->|browse, filter, register| G[GoodLoop]
+    O([Organiser]) -->|create events, view registrations| G
+    A([Admin]) -->|approve organisers, remove events| G
+```
+
+## Order of work
+Everyone starts at once, using fake data and the stub exports, so nobody waits on anybody.
+```mermaid
+flowchart TD
+    S["1. Setup (Saransh): Neon, Vercel, repo access"]
+    S --> P
+    subgraph P["2. Build in parallel (own files only)"]
+        A["Anousha: EventCard, filters, /events list + detail"]
+        D["Aditya: Event model + type, create/edit actions, organiser pages"]
+        M["Samaksh: map, RegisterButton, Registration model, /me"]
+        R["Saransh: login/signup check, admin panel"]
+    end
+    P --> C["3. Connect: map + RegisterButton into event pages, LocationPicker into form, registrations view"]
+    C --> F["4. Polish: seed data, empty/loading/mobile states, permission checks, deploy"]
+```
+Tasks, owners and checklists are in the [GitHub issues](https://github.com/Saransh-Jainbu/goodloop/issues) and on the [project board](https://github.com/users/Saransh-Jainbu/projects/4). File ownership and contracts: `CLAUDE.md` and `../WORK_SPLIT.md`.
+
 ## Setup
 
 ```bash
