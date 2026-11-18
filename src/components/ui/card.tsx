@@ -7,8 +7,13 @@ const Card = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => 
 const CardHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
   <div className={cn("flex flex-col space-y-1.5 p-6", className)} {...props} />
 );
-const CardTitle = ({ className, ...props }: React.HTMLAttributes<HTMLHeadingElement>) => (
-  <h3 className={cn("text-xl font-semibold leading-none tracking-tight", className)} {...props} />
+// Renders an h3 by default; pass `as="h2"` where the card sits directly under the page's h1 so headings don't skip a level.
+const CardTitle = ({
+  className,
+  as: Tag = "h3",
+  ...props
+}: React.HTMLAttributes<HTMLHeadingElement> & { as?: "h1" | "h2" | "h3" | "h4" }) => (
+  <Tag className={cn("text-xl font-semibold leading-none tracking-tight", className)} {...props} />
 );
 const CardDescription = ({ className, ...props }: React.HTMLAttributes<HTMLParagraphElement>) => (
   <p className={cn("text-sm text-muted-foreground", className)} {...props} />

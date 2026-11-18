@@ -17,7 +17,7 @@ export default async function Page() {
       </div>
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Your details</CardTitle>
+          <CardTitle as="h2" className="text-lg">Your details</CardTitle>
         </CardHeader>
         <CardContent>
           <NameForm name={user.name ?? ""} email={user.email} />
@@ -25,7 +25,7 @@ export default async function Page() {
       </Card>
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Change password</CardTitle>
+          <CardTitle as="h2" className="text-lg">Change password</CardTitle>
           <CardDescription>Use at least 8 characters.</CardDescription>
         </CardHeader>
         <CardContent>

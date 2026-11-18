@@ -139,7 +139,7 @@ export function NavMenu({
             type="button"
             onClick={() => setMobileOpen((o) => !o)}
             aria-expanded={mobileOpen}
-            aria-controls="mobile-menu"
+            aria-controls={mobileOpen ? "mobile-menu" : undefined}
             aria-label={mobileOpen ? "Close menu" : "Open menu"}
             className="flex h-10 w-10 items-center justify-center rounded-lg border bg-background/70 transition-colors hover:bg-accent md:hidden"
           >
