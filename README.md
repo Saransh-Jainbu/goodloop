@@ -9,6 +9,7 @@ Find and join local volunteering opportunities: blood donation camps, food and c
 [**Live site**](https://goodloop-pi.vercel.app) · [Browse events](https://goodloop-pi.vercel.app/events) · [Roadmap](https://github.com/Saransh-Jainbu/goodloop/issues/61) · [Report a bug](https://github.com/Saransh-Jainbu/goodloop/issues/new)
 
 [![CI](https://github.com/Saransh-Jainbu/goodloop/actions/workflows/ci.yml/badge.svg)](https://github.com/Saransh-Jainbu/goodloop/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 ![GoodLoop: Do good, close to home](docs/social-preview.png)
 
@@ -91,3 +92,11 @@ docs/               project report and the organisations plan
 
 - [Project report](docs/PROJECT_REPORT.md): requirements, architecture, data design, testing and status
 - [Organisations platform plan](docs/PLAN_ORGANISATIONS.md): roles, permissions, data model and phases
+
+## License
+
+GoodLoop is open source under the [MIT License](LICENSE). Copyright (c) 2026 The GoodLoop contributors.
+
+You are welcome to use, copy, modify and share this work, including commercially, as long as you **keep the copyright notice and the license text** in every copy or substantial portion. If you build on GoodLoop, please also credit it and link back to this repository: https://github.com/Saransh-Jainbu/goodloop.
+
+Third-party packages keep their own licenses.
