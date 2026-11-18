@@ -9,7 +9,8 @@ import { cancelRegistration } from "@/features/registrations/actions";
 import { getMyRegistrations } from "@/features/registrations/queries";
 import { getCurrentUser } from "@/lib/session";
 
-export default async function Page() {
+export default async function Page({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
+  const tab = (await searchParams).tab === "past" ? "past" : "upcoming";
   const user = await getCurrentUser();
   if (!user) redirect("/login?callbackUrl=/me");
 
@@ -37,13 +38,36 @@ export default async function Page() {
         </div>
       ) : (
         <>
-          <Section title={`Upcoming (${upcoming.length})`} empty="No upcoming events.">
-            {upcoming.map((r) => (
-              <Item key={r.id} r={r} cancellable />
+          {/* Tabs are links, so the tab is in the URL (shareable, works without JavaScript). */}
+          <nav aria-label="Registrations" className="flex gap-1 border-b">
+            {(
+              [
+                ["upcoming", "Upcoming", upcoming.length, "/me"],
+                ["past", "Past", past.length, "/me?tab=past"],
+              ] as const
+            ).map(([key, label, count, href]) => (
+              <Link
+                key={key}
+                href={href}
+                aria-current={tab === key ? "page" : undefined}
+                className={`-mb-px rounded-t-lg border-b-2 px-4 py-2 text-sm font-medium transition-colors ${
+                  tab === key
+                    ? "border-primary text-primary"
+                    : "border-transparent text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {label} ({count})
+              </Link>
             ))}
-          </Section>
-          {past.length > 0 && (
-            <Section title={`Past (${past.length})`}>
+          </nav>
+          {tab === "upcoming" ? (
+            <Section title="Upcoming" empty="No upcoming events. Browse events to find one.">
+              {upcoming.map((r) => (
+                <Item key={r.id} r={r} cancellable />
+              ))}
+            </Section>
+          ) : (
+            <Section title="Past" empty="No past events yet.">
               {past.map((r) => (
                 <Item key={r.id} r={r} />
               ))}
@@ -58,7 +82,7 @@ export default async function Page() {
 function Section({ title, empty, children }: { title: string; empty?: string; children: React.ReactNode[] }) {
   return (
     <section className="space-y-3">
-      <h2 className="text-lg font-semibold">{title}</h2>
+      <h2 className="sr-only">{title}</h2>
       {children.length === 0 && empty ? <p className="text-sm text-muted-foreground">{empty}</p> : <ul className="grid gap-3">{children}</ul>}
     </section>
   );
