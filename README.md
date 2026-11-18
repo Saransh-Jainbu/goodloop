@@ -1,74 +1,93 @@
+<div align="center">
+
 # GoodLoop
 
-Volunteering discovery platform (Next.js App Router, TypeScript, Prisma, Auth.js, Tailwind + shadcn/ui, Leaflet).
-Team rules, file ownership and contracts: see `../WORK_SPLIT.md`.
+**Do good, close to home.**
 
-## About the project
-GoodLoop connects volunteers with local volunteering opportunities.
-- **Volunteers** browse and filter events (by cause, date, location), see them on a map, and register interest.
-- **Organisers** create and manage their events and see who registered. They must be approved by an admin first.
-- **Admins** approve organisers and remove inappropriate events.
+Find and join local volunteering opportunities: blood donation camps, food and clothes drives, clean-ups, teaching sessions and more. Organisers list events and see who is coming; volunteers register in one click; admins keep it safe.
 
-```mermaid
-flowchart LR
-    V([Volunteer]) -->|browse, filter, register| G[GoodLoop]
-    O([Organiser]) -->|create events, view registrations| G
-    A([Admin]) -->|approve organisers, remove events| G
-```
+[**Live site**](https://goodloop-pi.vercel.app) · [Browse events](https://goodloop-pi.vercel.app/events) · [Roadmap](https://github.com/Saransh-Jainbu/goodloop/issues/61) · [Report a bug](https://github.com/Saransh-Jainbu/goodloop/issues/new)
 
-## Order of work
-Everyone starts at once, using fake data and the stub exports, so nobody waits on anybody.
-```mermaid
-flowchart TD
-    S["1. Setup (Saransh): Neon, Vercel, repo access"]
-    S --> P
-    subgraph P["2. Build in parallel (own files only)"]
-        A["Anousha: EventCard, filters, /events list + detail"]
-        D["Aditya: Event model + type, create/edit actions, organiser pages"]
-        M["Samaksh: map, RegisterButton, Registration model, /me"]
-        R["Saransh: login/signup check, admin panel"]
-    end
-    P --> C["3. Connect: map + RegisterButton into event pages, LocationPicker into form, registrations view"]
-    C --> F["4. Polish: seed data, empty/loading/mobile states, permission checks, deploy"]
-```
-Tasks, owners and checklists are in the [GitHub issues](https://github.com/Saransh-Jainbu/goodloop/issues) and on the [project board](https://github.com/users/Saransh-Jainbu/projects/4). File ownership and contracts: `CLAUDE.md` and `../WORK_SPLIT.md`.
+[![CI](https://github.com/Saransh-Jainbu/goodloop/actions/workflows/ci.yml/badge.svg)](https://github.com/Saransh-Jainbu/goodloop/actions/workflows/ci.yml)
 
-## Setup
+![GoodLoop: Do good, close to home](docs/social-preview.png)
+
+</div>
+
+## What it does
+
+Local welfare drives are advertised through scattered chat groups and posters, so volunteers can't find them and organisers can't tell who will show up. GoodLoop puts them in one place.
+
+| Who | What they can do |
+|---|---|
+| **Volunteers** | Browse and search events, filter by cause, date and location, see them on a map, register interest with one click, manage their registrations and profile |
+| **Organisers** | Create and manage events (draft, publish, cancel, duplicate), pin them on a map, see and export who registered. Approved by an admin first |
+| **Admins** | Approve or reject organisers, remove inappropriate events, see platform stats and search users |
+
+**Features**
+- Event discovery with keyword search, cause and date filters, sorting (soonest, newest, recommended) and pagination, all in the URL so any search is a shareable link
+- Interactive map (OpenStreetMap) with event popups, and a click-to-pin location picker for organisers
+- One-click registration with capacity limits, plus an add-to-calendar download for each event
+- Role-based access (volunteer, organiser, admin) enforced on the server
+- Responsive, accessible interface with a mobile menu
+
+**Coming next:** organisations people can create and join, announcements, members-only chat, and welfare drives with goals. See the [plan](docs/PLAN_ORGANISATIONS.md) and the [roadmap issue](https://github.com/Saransh-Jainbu/goodloop/issues/61).
+
+## Tech stack
+
+Next.js 15 (App Router) · TypeScript · PostgreSQL on Neon · Prisma 6 · Auth.js v5 · Tailwind CSS and shadcn/ui · Leaflet and OpenStreetMap · zod · Vitest · deployed on Vercel.
+
+## Getting started
+
+You need Node 22, [pnpm](https://pnpm.io) and a PostgreSQL database. Use **your own Neon branch**, never the shared production database.
 
 ```bash
+git clone https://github.com/Saransh-Jainbu/goodloop.git
+cd goodloop
 pnpm install
-cp .env.example .env           # (Prisma + Next both read .env) fill DATABASE_URL, DIRECT_URL (Neon) and AUTH_SECRET
-pnpm prisma migrate dev --name init
-pnpm db:seed                   # admin + demo organiser
-pnpm dev
+cp .env.example .env        # fill in the values below
+pnpm prisma migrate deploy  # applies the committed migrations to your database
+pnpm db:seed                # demo organiser, admin and sample events
+pnpm dev                    # http://localhost:3000
 ```
 
-Seeded accounts: `admin@goodloop.test` and `organiser@goodloop.test`. There are **no default passwords**: set `SEED_ADMIN_PASSWORD` and `SEED_ORGANISER_PASSWORD` in your `.env` before seeding, or the seed generates random ones and prints them once. Seeding never changes the password of an account that already exists.
+| Variable | What it is |
+|---|---|
+| `DATABASE_URL` | Pooled Postgres connection string (the host contains `-pooler`), used by the app |
+| `DIRECT_URL` | Direct connection string to the same database, used for migrations |
+| `AUTH_SECRET` | Random secret for sessions: `openssl rand -base64 32` |
+| `AUTH_URL` | The site's public URL, e.g. `http://localhost:3000`. Also used for sitemap and share links |
+| `SEED_ADMIN_PASSWORD`, `SEED_ORGANISER_PASSWORD` | Passwords for the seeded accounts. If empty, the seed generates random ones and prints them once |
 
-To change any account's password (for example on a shared or production database), run `pnpm db:set-password <email>`. It asks for the new password in your terminal, so it never appears in shell history, chat or logs. Run it only against the database you mean to change.
+There are no default passwords. To change any account's password, run `pnpm db:set-password <email>`: it asks in your terminal, so the password never appears in history or logs.
 
-## Database (Neon)
-- Prod/shared DB lives on Neon. `DATABASE_URL` = pooled connection string (host has `-pooler`); `DIRECT_URL` = direct one, used by `prisma migrate`.
-- Each dev should use their **own Neon branch** (Neon console -> Branches -> Create) so migrations don't collide while developing; only `main` runs against the shared branch. Set the Vercel env vars for production to the `main` branch's strings.
+### Scripts
 
-## Deployment (Vercel)
-Owner: Saransh. Vercel project is linked to the GitHub repo; `main` auto-deploys to production, every PR gets a preview URL.
-1. Import the repo in Vercel (framework: Next.js; it picks up pnpm from `packageManager` and runs the `vercel-build` script).
-2. Env vars (Project Settings -> Environment Variables): `DATABASE_URL` (pooled), `DIRECT_URL` (direct), `AUTH_SECRET`, `AUTH_URL` (the production URL). Never reuse the production values for Preview.
-3. Database: install the **Neon integration** in Vercel so each Preview deployment gets its own Neon branch automatically; Production uses the main Neon branch.
-4. Migrations: `vercel-build` runs `prisma migrate deploy` **only** when `VERCEL_ENV=production`, so previews never touch the production schema. Commit migration folders; never run `migrate dev` against production.
-5. Keep `main` deployable: a failing build blocks the deploy, so run `pnpm lint && pnpm typecheck && pnpm build` before opening a PR.
+`pnpm dev` · `pnpm build` · `pnpm lint` · `pnpm typecheck` · `pnpm test` · `pnpm db:migrate` · `pnpm db:seed` · `pnpm db:set-password <email>` · `pnpm db:studio`
 
-## CI & pull requests
-- `.github/workflows/ci.yml` runs on every PR to `main`: `prisma validate`, `pnpm lint`, `pnpm typecheck`, `next build` (dummy env, no DB needed).
-- In GitHub branch protection for `main`, require the **Lint, typecheck, build** check plus 1 approval and code-owner review.
-- PRs use `.github/pull_request_template.md`; fill every checkbox honestly.
+## Project structure
 
-## Scripts
-`dev`, `build`, `lint`, `typecheck`, `db:migrate`, `db:studio`, `db:seed`
+```
+src/app/            pages and routes (events, organiser, admin, me, auth)
+src/features/       feature code: discovery, events, registrations, map, admin, auth
+src/components/     shared UI (design system, navbar, landing page)
+src/lib/            auth, database, session helpers
+prisma/schema/      database models, one file per area, plus committed migrations
+docs/               project report and the organisations plan
+```
 
-## Rules (short)
-- One owner per file; see `.github/CODEOWNERS`. Need a change in someone else's file? Ask them.
-- Small PRs, rebase on `main`, `pnpm lint && pnpm build` before opening.
-- New dependency? Ask Saransh. Never commit `.env*`.
-- Migrations: only for your own `prisma/schema/*.prisma`; never edit old migrations.
+## Contributing
+
+- Work on a branch named `yourname/short-task` and open a pull request into `main`. CI (prisma validate, lint, typecheck, unit tests, build) must pass and one review is required.
+- One owner per area: see [`.github/CODEOWNERS`](.github/CODEOWNERS) and [`CLAUDE.md`](CLAUDE.md) for ownership, contracts between areas and conventions.
+- Keep PRs small, validate every Server Action input with zod, enforce permissions on the server, and never commit `.env*` or secrets.
+- Migrations: only for your own `prisma/schema/*.prisma` file; never edit an existing migration.
+
+## Deployment
+
+`main` deploys to Vercel automatically and every pull request gets a preview. Set `DATABASE_URL`, `DIRECT_URL`, `AUTH_SECRET` and `AUTH_URL` in the Vercel project settings; production runs `prisma migrate deploy` on each deploy. Never run `migrate dev` against production.
+
+## Documentation
+
+- [Project report](docs/PROJECT_REPORT.md): requirements, architecture, data design, testing and status
+- [Organisations platform plan](docs/PLAN_ORGANISATIONS.md): roles, permissions, data model and phases
