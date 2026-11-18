@@ -25,3 +25,10 @@ export type Event = {
     email: string;
   };
 };
+
+/** Compute spots remaining from capacity and registrations. Returns null if unlimited. */
+export function getSpotsLeft(capacity: number | null, registrationCount: number): number | null {
+  if (capacity === null) return null;
+  return Math.max(0, capacity - registrationCount);
+}
+

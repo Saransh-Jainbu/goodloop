@@ -141,6 +141,34 @@ export async function setEventStatus(eventId: string, status: EventStatus) {
   revalidatePath(`/events/${eventId}`);
 }
 
+export async function duplicateEvent(eventId: string) {
+  const user = await requireApprovedOrganiser();
+
+  const existing = await db.event.findUnique({ where: { id: eventId } });
+  if (!existing || existing.organiserId !== user.id) {
+    throw new Error("Unauthorized: you can only duplicate your own events.");
+  }
+
+  await db.event.create({
+    data: {
+      title: `${existing.title} (Copy)`,
+      description: existing.description,
+      cause: existing.cause,
+      startsAt: existing.startsAt,
+      endsAt: existing.endsAt,
+      address: existing.address,
+      lat: existing.lat,
+      lng: existing.lng,
+      capacity: existing.capacity,
+      status: "DRAFT",
+      organiserId: user.id,
+    },
+  });
+
+  revalidatePath("/organiser");
+  redirect("/organiser");
+}
+
 export async function deleteEvent(eventId: string) {
   const user = await requireApprovedOrganiser();
 

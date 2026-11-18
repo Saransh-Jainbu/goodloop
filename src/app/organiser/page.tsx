@@ -13,8 +13,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DeleteEventButton } from "@/features/events/DeleteEventButton";
+import { DuplicateEventButton } from "@/features/events/DuplicateEventButton";
 import { EventStatusButton } from "@/features/events/EventStatusButton";
 import { getOrganiserEvents } from "@/features/events/queries";
+import { getSpotsLeft } from "@/features/events/types";
 import { requireRole } from "@/lib/session";
 
 export default async function OrganiserPage({
@@ -157,10 +159,10 @@ export default async function OrganiserPage({
           ) : (
             <div className="grid gap-4">
               {events.map((event) => {
-                const spotsLeft =
-                  event.capacity !== null
-                    ? Math.max(0, event.capacity - event._count.registrations)
-                    : null;
+                const spotsLeft = getSpotsLeft(
+                  event.capacity,
+                  event._count.registrations
+                );
 
                 return (
                   <Card
@@ -222,9 +224,19 @@ export default async function OrganiserPage({
                           <Users className="h-4 w-4 shrink-0" aria-hidden />
                           <span>
                             {event._count.registrations} registered
-                            {event.capacity
-                              ? ` / ${event.capacity} capacity (${spotsLeft} left)`
-                              : " (unlimited)"}
+                            {event.capacity !== null ? (
+                              spotsLeft === 0 ? (
+                                <span className="ml-1 font-medium text-destructive">
+                                  (Full • 0 spots left)
+                                </span>
+                              ) : (
+                                <span className="ml-1 text-muted-foreground">
+                                  / {event.capacity} capacity ({spotsLeft} spots left)
+                                </span>
+                              )
+                            ) : (
+                              " (unlimited capacity)"
+                            )}
                           </span>
                         </div>
                       </div>
@@ -244,6 +256,7 @@ export default async function OrganiserPage({
                             Edit
                           </Button>
                         </Link>
+                        <DuplicateEventButton eventId={event.id} />
                         <DeleteEventButton eventId={event.id} />
                       </div>
                     </CardContent>
