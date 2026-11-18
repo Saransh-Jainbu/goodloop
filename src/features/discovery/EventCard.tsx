@@ -16,7 +16,7 @@ export function EventCard({ event }: { event: Event }) {
         <CauseTile cause={event.cause} className="h-24" />
         <CardHeader>
           <CauseBadge cause={event.cause} className="w-fit" />
-          <CardTitle className="pt-1 text-lg">{event.title}</CardTitle>
+          <CardTitle as="h2" className="pt-1 text-lg">{event.title}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-1 text-sm text-muted-foreground">
           <p className="flex items-center gap-2">
