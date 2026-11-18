@@ -169,6 +169,26 @@ export function EventForm({
         )}
       </div>
 
+      {/* Status (for existing events) */}
+      {event?.id && (
+        <div className="space-y-2">
+          <Label htmlFor="status">Status</Label>
+          <select
+            id="status"
+            name="status"
+            defaultValue={event.status ?? "PUBLISHED"}
+            className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <option value="PUBLISHED">Published (visible to volunteers)</option>
+            <option value="DRAFT">Draft (hidden from discovery)</option>
+            <option value="CANCELLED">Cancelled</option>
+          </select>
+          {state?.fieldErrors?.status && (
+            <p className="text-xs text-destructive">{state.fieldErrors.status}</p>
+          )}
+        </div>
+      )}
+
       <div className="flex items-center gap-3 pt-2">
         <Button type="submit" disabled={pending}>
           {pending ? "Saving…" : submitLabel}

@@ -65,4 +65,8 @@ Owner: Saransh. Vercel project is linked to the GitHub repo; `main` auto-deploys
 ## Scripts
 `dev`, `build`, `lint`, `typecheck`, `db:migrate`, `db:studio`, `db:seed`
 
-
+## Rules (short)
+- One owner per file; see `.github/CODEOWNERS`. Need a change in someone else's file? Ask them.
+- Small PRs, rebase on `main`, `pnpm lint && pnpm build` before opening.
+- New dependency? Ask Saransh. Never commit `.env*`.
+- Migrations: only for your own `prisma/schema/*.prisma`; never edit old migrations.

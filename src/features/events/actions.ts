@@ -88,6 +88,9 @@ export async function updateEvent(
     return extractErrors(parsed.error);
   }
 
+  // If status was explicitly provided in the form, use it; otherwise preserve existing status
+  const targetStatus = raw.status ? parsed.data.status : existing.status;
+
   try {
     await db.event.update({
       where: { id: eventId },
@@ -101,7 +104,7 @@ export async function updateEvent(
         lat: parsed.data.lat,
         lng: parsed.data.lng,
         capacity: parsed.data.capacity ?? null,
-        status: parsed.data.status,
+        status: targetStatus,
       },
     });
   } catch (err) {
