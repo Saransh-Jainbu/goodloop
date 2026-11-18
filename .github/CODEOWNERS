@@ -1,0 +1,11 @@
+# Replace handles with real GitHub usernames.
+*                                   @saransh
+/prisma/schema/event.prisma         @aditya
+/prisma/schema/registration.prisma  @samaksh
+/src/app/events/                    @anousha
+/src/features/discovery/            @anousha
+/src/app/organiser/                 @aditya
+/src/features/events/               @aditya
+/src/app/me/                        @samaksh
+/src/features/map/                  @samaksh
+/src/features/registrations/        @samaksh

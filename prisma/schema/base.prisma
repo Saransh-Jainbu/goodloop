@@ -1,0 +1,11 @@
+// OWNER: Saransh
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["prismaSchemaFolder"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url       = env("DATABASE_URL") // Neon pooled connection (app runtime)
+  directUrl = env("DIRECT_URL")   // Neon direct connection (migrations)
+}
