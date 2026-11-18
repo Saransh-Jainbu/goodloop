@@ -20,7 +20,7 @@ export function LoginForm({ callbackUrl }: { callbackUrl?: string }) {
         <Label htmlFor="password">Password</Label>
         <Input id="password" name="password" type="password" required autoComplete="current-password" />
       </div>
-      {state?.error && <p className="text-sm text-destructive">{state.error}</p>}
+      {state?.error && <p role="alert" className="text-sm text-destructive">{state.error}</p>}
       <Button type="submit" className="w-full" disabled={pending}>{pending ? "Signing in…" : "Log in"}</Button>
       <p className="text-center text-sm text-muted-foreground">
         No account? <Link href="/signup" className="text-primary underline">Sign up</Link>
