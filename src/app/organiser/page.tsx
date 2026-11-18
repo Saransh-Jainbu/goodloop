@@ -4,9 +4,14 @@ import { format } from "date-fns";
 import {
   CalendarDays,
   CheckCircle2,
+  Clock,
+  Compass,
   FileText,
+  Lightbulb,
+  Mail,
   MapPin,
   Plus,
+  Sparkles,
   Users,
   XCircle,
 } from "lucide-react";
@@ -61,33 +66,72 @@ export default async function OrganiserPage({
         )}
       </div>
 
-      {/* Account Rejected Banner */}
+      {/* 1. Account Rejected Screen */}
       {isRejected && (
-        <div className="flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-destructive">
-          <XCircle className="mt-0.5 h-5 w-5 shrink-0" />
-          <div>
-            <h2 className="font-semibold">Account Application Rejected</h2>
-            <p className="mt-1 text-sm">
-              Your organiser account has been reviewed and rejected by an administrator.
-              You cannot list or manage events at this time.
+        <Card className="border-destructive/30 bg-destructive/5">
+          <CardContent className="flex flex-col items-center p-8 text-center sm:p-12">
+            <div className="rounded-full bg-destructive/10 p-3 text-destructive">
+              <XCircle className="h-8 w-8" />
+            </div>
+            <h2 className="mt-4 text-xl font-bold text-foreground">
+              Application Not Approved
+            </h2>
+            <p className="mt-2 max-w-lg text-sm text-muted-foreground">
+              Thank you for your interest in leading volunteering opportunities on GoodLoop.
+              At this time, your organiser application could not be approved based on our community
+              verification criteria.
             </p>
-          </div>
-        </div>
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+              <a href="mailto:admin@goodloop.test">
+                <Button variant="outline" size="sm" className="flex items-center gap-2">
+                  <Mail className="h-4 w-4" />
+                  Contact Support
+                </Button>
+              </a>
+              <Link href="/events">
+                <Button variant="ghost" size="sm" className="flex items-center gap-2">
+                  <Compass className="h-4 w-4" />
+                  Browse Volunteer Opportunities
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
-      {/* Account Pending Approval Banner */}
+      {/* 2. Account Pending Approval Screen */}
       {isPending && (
-        <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4 text-yellow-900 dark:border-yellow-900/40 dark:bg-yellow-950/20 dark:text-yellow-200">
-          <h2 className="font-semibold">Account Pending Approval</h2>
-          <p className="mt-1 text-sm text-yellow-800 dark:text-yellow-300">
-            {params.pending === "1"
-              ? "You must be approved by an administrator before creating or managing listings."
-              : "Your organiser account is currently pending review by an administrator. Once approved, you will be able to create listings and manage volunteer events."}
-          </p>
-        </div>
+        <Card className="border-amber-200 bg-amber-50/50 dark:border-amber-900/40 dark:bg-amber-950/10">
+          <CardContent className="flex flex-col items-center p-8 text-center sm:p-12">
+            <div className="rounded-full bg-amber-100 p-3 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400">
+              <Clock className="h-8 w-8" />
+            </div>
+            <h2 className="mt-4 text-xl font-bold text-foreground">
+              Organiser Application Under Review
+            </h2>
+            <p className="mt-2 max-w-lg text-sm text-muted-foreground">
+              {params.pending === "1"
+                ? "You must be approved by an administrator before creating or publishing listings."
+                : "Thank you for registering to organise opportunities! To ensure trust and safety for all volunteers, our community team reviews all organiser accounts. Verification typically takes 1-2 business days."}
+            </p>
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+              <Link href="/events">
+                <Button size="sm" className="flex items-center gap-2">
+                  <Compass className="h-4 w-4" />
+                  Explore GoodLoop Events
+                </Button>
+              </Link>
+              <Link href="/">
+                <Button variant="outline" size="sm">
+                  Return Home
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
-      {/* Dashboard Stats Cards */}
+      {/* 3. Dashboard Stats Cards (for approved organisers) */}
       {isApproved && (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Card>
@@ -136,7 +180,7 @@ export default async function OrganiserPage({
         </div>
       )}
 
-      {/* Events List */}
+      {/* 4. Events Section */}
       {isApproved && (
         <section aria-labelledby="events-heading" className="space-y-4">
           <div className="flex items-center justify-between">
@@ -146,15 +190,56 @@ export default async function OrganiserPage({
           </div>
 
           {events.length === 0 ? (
-            <Card className="p-8 text-center">
-              <p className="text-muted-foreground">
-                You haven&apos;t created any events yet.
-              </p>
-              <Link href="/organiser/new" className="mt-4 inline-block">
-                <Button variant="outline" size="sm">
-                  Create your first event
-                </Button>
-              </Link>
+            /* First-event Onboarding Hint */
+            <Card className="border-dashed p-8">
+              <div className="mx-auto max-w-lg text-center">
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <Sparkles className="h-6 w-6" />
+                </div>
+                <h3 className="mt-4 text-lg font-semibold">Ready to list your first opportunity?</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Connect with eager volunteers across your local community in just a few minutes.
+                </p>
+
+                <div className="mt-6 grid gap-3 text-left sm:grid-cols-3">
+                  <div className="rounded-lg border bg-muted/30 p-3 text-xs">
+                    <div className="flex items-center gap-1.5 font-medium text-foreground">
+                      <Lightbulb className="h-3.5 w-3.5 text-amber-500" />
+                      1. Pick a Cause
+                    </div>
+                    <p className="mt-1 text-muted-foreground">
+                      Tag with Environment, Community, or Animals so volunteers find you.
+                    </p>
+                  </div>
+                  <div className="rounded-lg border bg-muted/30 p-3 text-xs">
+                    <div className="flex items-center gap-1.5 font-medium text-foreground">
+                      <MapPin className="h-3.5 w-3.5 text-primary" />
+                      2. Pin the Venue
+                    </div>
+                    <p className="mt-1 text-muted-foreground">
+                      Click the map to place an exact pin so volunteers see distance.
+                    </p>
+                  </div>
+                  <div className="rounded-lg border bg-muted/30 p-3 text-xs">
+                    <div className="flex items-center gap-1.5 font-medium text-foreground">
+                      <Users className="h-3.5 w-3.5 text-green-600" />
+                      3. Set Capacity
+                    </div>
+                    <p className="mt-1 text-muted-foreground">
+                      Cap the team size or leave blank for drop-in sessions.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-8">
+                  <Link href="/organiser/new">
+                    <Button className="flex items-center gap-2">
+                      <Plus className="h-4 w-4" />
+                      Create Your First Event
+                    </Button>
+                  </Link>
+                </div>
+              </div>
             </Card>
           ) : (
             <div className="grid gap-4">
