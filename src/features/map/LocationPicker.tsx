@@ -1,15 +1,15 @@
 "use client";
-// OWNER: Samaksh. Contract: <LocationPicker value onChange />
+// Contract: <LocationPicker value onChange />. Click the map to drop the pin.
+// Leaflet needs the browser, so the real map is loaded with next/dynamic (ssr: false).
+import dynamic from "next/dynamic";
+
 export type LatLng = { lat: number; lng: number };
 
+const Inner = dynamic(() => import("./LocationPickerInner").then((m) => m.LocationPickerInner), {
+  ssr: false,
+  loading: () => <div className="h-64 w-full animate-pulse rounded-lg bg-muted sm:h-80" aria-busy="true" />,
+});
+
 export function LocationPicker({ value, onChange }: { value?: LatLng; onChange: (v: LatLng) => void }) {
-  return (
-    <button
-      type="button"
-      className="h-48 w-full rounded-lg border bg-muted text-sm text-muted-foreground"
-      onClick={() => onChange(value ?? { lat: 28.6139, lng: 77.209 })}
-    >
-      Location picker placeholder {value ? `(${value.lat}, ${value.lng})` : ""}
-    </button>
-  );
+  return <Inner value={value} onChange={onChange} />;
 }
