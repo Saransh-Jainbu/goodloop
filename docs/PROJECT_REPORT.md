@@ -34,9 +34,9 @@ GoodLoop is a web platform, in the spirit of Luma but built for **social good**,
 | ID | Requirement | Owner | Status |
 |---|---|---|---|
 | FR1 | Browse opportunities and view event details | Anousha | Built (on sample data) |
-| FR2 | Organisers create and update listings (title, description, date, location, cause) | Aditya | In progress |
+| FR2 | Organisers create and update listings (title, description, date, location, cause) | Aditya | Built (PR #33); needs integration testing |
 | FR3 | Filter listings by date range, cause and location (in the URL) | Anousha | Built (on sample data) |
-| FR4 | Volunteers register interest; organisers review registrations | Samaksh / Aditya | In progress |
+| FR4 | Volunteers register interest; organisers review registrations | Samaksh / Aditya | Organiser roster page built; volunteer registration and data layer in progress |
 | FR5 | Admin reviews organiser accounts and removes listings | Saransh | **Done and verified** |
 | FR6 | Sign-up, login and role-based access | Saransh | **Done and verified** |
 | O4 | Lightweight relevance ordering of events (optional) | Samaksh | Planned |
@@ -200,7 +200,15 @@ erDiagram
     Event {
         string id PK
         string title
+        string description
         Cause cause
+        datetime startsAt
+        datetime endsAt
+        string address
+        float lat
+        float lng
+        int capacity
+        EventStatus status "DRAFT | PUBLISHED | CANCELLED"
         string organiserId FK
         datetime createdAt
     }
@@ -213,7 +221,7 @@ erDiagram
 ```
 
 - **Integrity:** `Registration` has a unique pair `(userId, eventId)`, so nobody registers twice. Deleting a user or event cascades to their registrations.
-- **Event model:** the deployed `Event` table is currently a minimal version (`id, title, cause, organiserId, createdAt`). The full model (description, start and end time, address, latitude and longitude, capacity, status) is being added by Aditya (issue #6). The event `type` used by the UI already has these fields.
+- **Event model:** the full model (description, start and end time, address, latitude and longitude, capacity, status) was added in PR #33 with a migration written to be safe on tables that already have rows. It reaches the production database with the next production deploy.
 - **Migrations:** schema changes are committed as migration folders and applied to production with `prisma migrate deploy` on each production deploy. The first migration (`init`) is in `main`.
 - **Seed data:** one admin and one demo organiser (dev/demo only).
 
@@ -267,9 +275,10 @@ The prototype is **live** at https://goodloop-pi.vercel.app and connected to the
 - Organisers start as `PENDING`.
 - **Admin panel** (`/admin`): approve or reject organisers, remove events.
 - **Discovery** (`/events`): event list, filters (cause, date range, location) in the URL, event detail pages, with empty, loading and error states. Currently served from sample data.
-- Production deploy with migrations applied.
+- **Organiser area** (PR #33): dashboard of own events, create and edit forms with validation, delete with confirmation, status (published, draft, cancelled), and a per-event registrations page. All server actions check the organiser's ownership.
+- Production deploy with the `init` migration applied. The `event` migration ships with the next production deploy.
 
-**Still stubs or in progress:** real `Event` model and organiser CRUD pages, registrations, and the map (see §13).
+**Still stubs or in progress:** registrations (volunteer side and the data behind the organiser roster), the real map and location picker, and switching discovery from sample data to the database (see §13).
 
 ---
 
@@ -301,7 +310,7 @@ There is **no automated test suite yet**. Validation so far is CI checks plus ma
 **Defects found and fixed during validation:** (a) empty `AUTH_SECRET` caused a 500 on every auth call; (b) a malformed `AUTH_URL` on Vercel broke the whole site until corrected. Both were configuration errors, not code bugs.
 
 ### 9.3 Not yet tested
-Pending organisers being blocked from creating listings (the page isn't built yet; the server check `requireApprovedOrganiser` exists), registration flows, map behavior, and mobile devices.
+The organiser create, edit and delete flows from PR #33 (the author tested them; the team has not independently re-run them), pending organisers being blocked from creating listings in the UI, registration flows, map behavior, and mobile devices.
 
 ---
 
@@ -356,6 +365,7 @@ Measured with `curl` against the live site, from one location, one sample each. 
 - Auth: sign-up and login with roles and organiser status. Verified end to end.
 - **Admin panel (FR5):** approve and reject organisers, remove events.
 - **Discovery UI (FR1, FR3):** event cards, filters in the URL, list and detail pages, empty, loading and error states (on sample data).
+- **Organiser area and Event model (FR2, partly FR4):** PR #33, reviewed and merged.
 - **Landing page** with animated hero, features, how it works and trust sections.
 - **Production deployment** on Vercel, tested end to end on the live URL.
 
@@ -363,15 +373,12 @@ Measured with `curl` against the live site, from one location, one sample each. 
 
 | Item | Issue | Owner |
 |---|---|---|
-| Real `Event` model + migration (full fields) and shared `Event` zod schema | #6, #2 | Aditya |
-| Create / update / delete event actions with ownership checks | #7 | Aditya |
-| Organiser dashboard, new and edit pages | #8 | Aditya |
-| Registrations list for an organiser; location picker in the form | #16, #17 | Aditya / Samaksh |
+| Location picker that works on a real map (currently a placeholder button) | #17 | Samaksh |
+| Registrations data behind the organiser roster (`getRegistrationsForEvent`) | #17 | Samaksh |
 | `Registration` model + migration, `RegisterButton`, register / cancel, `/me` page | #12, #13 | Samaksh |
 | Map component with real markers (Leaflet + OpenStreetMap) | #4 | Samaksh |
 | Switch discovery from sample data to real database queries | (follow-up to #9) | Anousha |
 | Relevance ordering `rankEvents` (optional) | #21 | Samaksh |
-| Validation and permission review | #20 | Aditya |
 | Seed sample events; final README | #18 | Saransh |
 | **Welfare-specific categories** (blood donation, food, clothes, social work) and matching filters | new | Team |
 | Automated tests (actions, queries, permission checks) | new | Team |
