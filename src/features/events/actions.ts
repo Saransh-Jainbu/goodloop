@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { requireApprovedOrganiser } from "@/lib/session";
 import { eventSchema, type EventActionState } from "./schema";
+import { EVENT_STATUSES, type EventStatus } from "./types";
 
 function extractErrors(parsedError: import("zod").ZodError): {
   error: string;
@@ -116,6 +117,75 @@ export async function updateEvent(
   revalidatePath(`/events/${eventId}`);
   revalidatePath("/events");
   redirect("/organiser");
+}
+
+export async function setEventStatus(eventId: string, status: EventStatus) {
+  const user = await requireApprovedOrganiser();
+
+  if (!EVENT_STATUSES.includes(status)) {
+    throw new Error("Invalid event status.");
+  }
+
+  const existing = await db.event.findUnique({ where: { id: eventId } });
+  if (!existing || existing.organiserId !== user.id) {
+    throw new Error("Unauthorized: you can only update your own events.");
+  }
+
+  await db.event.update({
+    where: { id: eventId },
+    data: { status },
+  });
+
+  revalidatePath("/organiser");
+  revalidatePath("/events");
+  revalidatePath(`/events/${eventId}`);
+}
+
+export async function duplicateEvent(eventId: string) {
+  const user = await requireApprovedOrganiser();
+
+  const existing = await db.event.findUnique({ where: { id: eventId } });
+  if (!existing || existing.organiserId !== user.id) {
+    throw new Error("Unauthorized: you can only duplicate your own events.");
+  }
+
+  await db.event.create({
+    data: {
+      title: `${existing.title} (Copy)`,
+      description: existing.description,
+      cause: existing.cause,
+      startsAt: existing.startsAt,
+      endsAt: existing.endsAt,
+      address: existing.address,
+      lat: existing.lat,
+      lng: existing.lng,
+      capacity: existing.capacity,
+      status: "DRAFT",
+      organiserId: user.id,
+    },
+  });
+
+  revalidatePath("/organiser");
+  redirect("/organiser");
+}
+
+export async function declineRegistration(eventId: string, registrationId: string) {
+  const user = await requireApprovedOrganiser();
+
+  const event = await db.event.findFirst({
+    where: { id: eventId, organiserId: user.id },
+  });
+  if (!event) {
+    throw new Error("Unauthorized: you can only manage registrations for your own events.");
+  }
+
+  await db.registration.delete({
+    where: { id: registrationId },
+  });
+
+  revalidatePath(`/organiser/${eventId}/registrations`);
+  revalidatePath("/organiser");
+  revalidatePath(`/events/${eventId}`);
 }
 
 export async function deleteEvent(eventId: string) {
