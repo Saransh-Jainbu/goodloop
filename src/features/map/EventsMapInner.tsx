@@ -6,6 +6,7 @@ import { useEffect, useMemo } from "react";
 import L from "leaflet";
 import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
 import { format } from "date-fns";
+import { CauseBadge } from "@/features/discovery/cause";
 import type { Event } from "@/features/events/types";
 
 // A plain CSS dot, so we don't depend on Leaflet's default marker images (which break with bundlers).
@@ -48,6 +49,8 @@ export function EventsMapInner({ events }: { events: Event[] }) {
         <Marker key={e.id} position={[e.lat, e.lng]} icon={pinIcon}>
           <Popup>
             <div className="space-y-1">
+              <CauseBadge cause={e.cause} />
+              <br />
               <a href={`/events/${e.id}`} className="font-semibold text-emerald-700 hover:underline">
                 {e.title}
               </a>
