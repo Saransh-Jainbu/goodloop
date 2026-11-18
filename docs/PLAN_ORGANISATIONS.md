@@ -13,7 +13,7 @@ GoodLoop grows from "browse volunteering events" into a platform for social-welf
 - **Events and drives** live under an organisation, so members see them first and admins manage them as a team.
 - Volunteers can still browse and register for events without joining anything.
 
-> **Scope warning.** `CLAUDE.md` says the MVP is small on purpose. This roughly doubles the app. Agree it as a team first (#62); if time is short, ship phases 1 and 2 well and treat chat as a stretch.
+> **Scope note.** `CLAUDE.md` says the MVP is small on purpose. This roughly doubles the app, so agree it as a team first (#62). There is plenty of time before the final evaluation, so all phases are in scope; if that changes, ship phases 1 and 2 first and treat chat as the stretch.
 
 ## 2. Working assumptions (to confirm in #62)
 
@@ -25,7 +25,7 @@ GoodLoop grows from "browse volunteering events" into a platform for social-welf
 | Notifications | In-app first; email in phase 5 |
 | Chat transport | Polling every few seconds (no new infrastructure); swappable later |
 | Existing organisers and events | Keep working; events may belong to an organisation or stay independent |
-| Final evaluation date | **Unknown. Needed to decide how many phases fit** |
+| Time available | **Plenty of time before the final evaluation, so all phases are in scope.** Phase order still stands, so each phase is demoable as we go |
 
 ## 3. Roles and permissions
 
@@ -207,7 +207,7 @@ There are no automated tests today (#63 fixes that first). Rules for this epic:
 
 | Risk | Mitigation |
 |---|---|
-| Not enough time for all phases | Phases are independent; ship 1 and 2, treat chat as a stretch |
+| Time runs short later | Phases are independent; ship 1 and 2 first, treat chat as a stretch |
 | Chat abuse and spam | Verification, membership-only chat, rate limits, moderation, reports (phases 3 and 4) |
 | Permission bugs | Central helpers, matrix tests, and review focused on ownership checks |
 | Privacy of member data | Disclosure at join, hide-from-list option, data deletion (#91) |
@@ -223,6 +223,6 @@ There are no automated tests today (#63 fixes that first). Rules for this epic:
 
 ## 10. Open questions
 
-1. When is the final evaluation? (Decides how many phases fit.)
+1. ~~When is the final evaluation?~~ Answered: there is plenty of time, so all phases are in scope.
 2. Confirm the assumptions in section 2.
 3. Should "Organisation" replace the platform `ORGANISER` role in the long run, or live alongside it?
