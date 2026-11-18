@@ -4,18 +4,19 @@ import { format } from "date-fns";
 import { CalendarDays, MapPin } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Event } from "@/features/events/types";
-
-export const causeLabel = (cause: string) => cause.charAt(0) + cause.slice(1).toLowerCase();
+import { CauseBadge, CauseTile } from "./cause";
 
 export function EventCard({ event }: { event: Event }) {
   return (
-    <Link href={`/events/${event.id}`} className="block rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-      <Card className="h-full transition-shadow hover:shadow-md">
+    <Link
+      href={`/events/${event.id}`}
+      className="block h-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    >
+      <Card className="flex h-full flex-col overflow-hidden transition-shadow hover:shadow-md">
+        <CauseTile cause={event.cause} className="h-24" />
         <CardHeader>
-          <span className="w-fit rounded-full bg-secondary px-2.5 py-0.5 text-xs font-medium text-secondary-foreground">
-            {causeLabel(event.cause)}
-          </span>
-          <CardTitle className="pt-1">{event.title}</CardTitle>
+          <CauseBadge cause={event.cause} className="w-fit" />
+          <CardTitle className="pt-1 text-lg">{event.title}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-1 text-sm text-muted-foreground">
           <p className="flex items-center gap-2">
@@ -24,7 +25,7 @@ export function EventCard({ event }: { event: Event }) {
           </p>
           <p className="flex items-center gap-2">
             <MapPin className="h-4 w-4 shrink-0" aria-hidden />
-            {event.address}
+            <span className="line-clamp-1">{event.address}</span>
           </p>
         </CardContent>
       </Card>
