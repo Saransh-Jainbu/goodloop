@@ -1,0 +1,184 @@
+"use client";
+
+// OWNER: Aditya. Event creation and editing form.
+import { useActionState, useState } from "react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { LocationPicker, type LatLng } from "@/features/map/LocationPicker";
+import { CAUSES, type Event } from "./types";
+import type { EventActionState } from "./schema";
+
+function toDateTimeLocalString(date?: Date | null): string {
+  if (!date) return "";
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+export function EventForm({
+  event,
+  action,
+  submitLabel = "Save Event",
+}: {
+  event?: Partial<Event>;
+  action: (state: EventActionState, formData: FormData) => Promise<EventActionState>;
+  submitLabel?: string;
+}) {
+  const [state, formAction, pending] = useActionState(action, undefined);
+  const [location, setLocation] = useState<LatLng>({
+    lat: event?.lat ?? 53.4808,
+    lng: event?.lng ?? -2.2426,
+  });
+
+  return (
+    <form action={formAction} className="space-y-6">
+      {state?.error && (
+        <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
+          {state.error}
+        </div>
+      )}
+
+      {/* Title */}
+      <div className="space-y-2">
+        <Label htmlFor="title">Event Title *</Label>
+        <Input
+          id="title"
+          name="title"
+          defaultValue={event?.title ?? ""}
+          placeholder="e.g. Community Tree Planting"
+          required
+        />
+        {state?.fieldErrors?.title && (
+          <p className="text-xs text-destructive">{state.fieldErrors.title}</p>
+        )}
+      </div>
+
+      {/* Cause */}
+      <div className="space-y-2">
+        <Label htmlFor="cause">Cause *</Label>
+        <select
+          id="cause"
+          name="cause"
+          defaultValue={event?.cause ?? "COMMUNITY"}
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          {CAUSES.map((c) => (
+            <option key={c} value={c}>
+              {c.charAt(0) + c.slice(1).toLowerCase()}
+            </option>
+          ))}
+        </select>
+        {state?.fieldErrors?.cause && (
+          <p className="text-xs text-destructive">{state.fieldErrors.cause}</p>
+        )}
+      </div>
+
+      {/* Description */}
+      <div className="space-y-2">
+        <Label htmlFor="description">Description *</Label>
+        <textarea
+          id="description"
+          name="description"
+          defaultValue={event?.description ?? ""}
+          rows={4}
+          placeholder="Describe the opportunity, what volunteers will do, and what to bring..."
+          required
+          className="flex min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        />
+        {state?.fieldErrors?.description && (
+          <p className="text-xs text-destructive">{state.fieldErrors.description}</p>
+        )}
+      </div>
+
+      {/* Dates */}
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="startsAt">Starts At *</Label>
+          <Input
+            id="startsAt"
+            name="startsAt"
+            type="datetime-local"
+            defaultValue={toDateTimeLocalString(event?.startsAt)}
+            required
+          />
+          {state?.fieldErrors?.startsAt && (
+            <p className="text-xs text-destructive">{state.fieldErrors.startsAt}</p>
+          )}
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="endsAt">Ends At (Optional)</Label>
+          <Input
+            id="endsAt"
+            name="endsAt"
+            type="datetime-local"
+            defaultValue={toDateTimeLocalString(event?.endsAt)}
+          />
+          {state?.fieldErrors?.endsAt && (
+            <p className="text-xs text-destructive">{state.fieldErrors.endsAt}</p>
+          )}
+        </div>
+      </div>
+
+      {/* Address */}
+      <div className="space-y-2">
+        <Label htmlFor="address">Address / Venue *</Label>
+        <Input
+          id="address"
+          name="address"
+          defaultValue={event?.address ?? ""}
+          placeholder="e.g. Central Library, 10 Main Street"
+          required
+        />
+        {state?.fieldErrors?.address && (
+          <p className="text-xs text-destructive">{state.fieldErrors.address}</p>
+        )}
+      </div>
+
+      {/* Map Coordinates */}
+      <div className="space-y-2">
+        <Label>Pin Location</Label>
+        <p className="text-xs text-muted-foreground">
+          Click the map to place the location pin (Coordinates: {location.lat.toFixed(4)}, {location.lng.toFixed(4)})
+        </p>
+        <LocationPicker value={location} onChange={setLocation} />
+        <input type="hidden" name="lat" value={location.lat} />
+        <input type="hidden" name="lng" value={location.lng} />
+        {(state?.fieldErrors?.lat || state?.fieldErrors?.lng) && (
+          <p className="text-xs text-destructive">
+            {state.fieldErrors.lat ?? state.fieldErrors.lng}
+          </p>
+        )}
+      </div>
+
+      {/* Capacity */}
+      <div className="space-y-2">
+        <Label htmlFor="capacity">Volunteer Capacity (Optional)</Label>
+        <Input
+          id="capacity"
+          name="capacity"
+          type="number"
+          min={1}
+          defaultValue={event?.capacity ?? ""}
+          placeholder="Leave blank for unlimited"
+        />
+        {state?.fieldErrors?.capacity && (
+          <p className="text-xs text-destructive">{state.fieldErrors.capacity}</p>
+        )}
+      </div>
+
+      <div className="flex items-center gap-3 pt-2">
+        <Button type="submit" disabled={pending}>
+          {pending ? "Saving…" : submitLabel}
+        </Button>
+        <Link href="/organiser">
+          <Button type="button" variant="outline">
+            Cancel
+          </Button>
+        </Link>
+      </div>
+    </form>
+  );
+}
