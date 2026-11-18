@@ -29,13 +29,13 @@ export function SignupForm({ defaultType = "USER" }: { defaultType?: "USER" | "O
           id="accountType"
           name="accountType"
           defaultValue={defaultType}
-          className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+          className="flex h-11 w-full rounded-lg border border-input bg-background px-3 text-sm shadow-sm transition-all hover:border-primary/40 focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30"
         >
           <option value="USER">Find volunteering opportunities</option>
           <option value="ORGANISER">Organise events (needs admin approval)</option>
         </select>
       </div>
-      {state?.error && <p className="text-sm text-destructive">{state.error}</p>}
+      {state?.error && <p role="alert" className="text-sm text-destructive">{state.error}</p>}
       <Button type="submit" className="w-full" disabled={pending}>{pending ? "Creating…" : "Create account"}</Button>
       <p className="text-center text-sm text-muted-foreground">
         Already have an account? <Link href="/login" className="text-primary underline">Log in</Link>
