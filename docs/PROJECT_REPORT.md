@@ -1,24 +1,47 @@
-# GoodLoop: Mid-Evaluation Project Report
+# GoodLoop: Project Report (Mid-Evaluation Submission)
 
 **Course:** CSET400C Capstone  
-**Team:** Saransh (setup, auth, admin, deployment, registrations, maps, design system) · Aditya (events, organiser side) · Anousha (discovery, event pages) · Samaksh (not contributing for now; his areas moved to Saransh)  
+**Team:** Saransh (setup, auth, admin, registrations, maps, design system, deployment) · Aditya (events and organiser side) · Anousha (discovery and event pages) · Samaksh (not contributing for now; his areas moved to Saransh)  
 **Live prototype:** https://goodloop-pi.vercel.app  
-**Repository:** https://github.com/Saransh-Jainbu/goodloop  
-**Last updated:** 18 November 2026
+**Source code:** https://github.com/Saransh-Jainbu/goodloop (MIT licensed)  
+**Last updated:** 19 November 2026
+
+> **How to read this report.** GoodLoop is described as it will be at the final evaluation: the **MVP, which is built, deployed and tested**, plus the **organisations platform, which is designed, planned and broken into issues but not yet built**. Every table and diagram marks which is which. Planned items use the word **Planned**; in diagrams they have dashed borders. Nothing marked Planned is claimed to work today.
+
+## Report checklist
+
+| Required parameter | Section |
+|---|---|
+| Finalized system requirements | 2 |
+| System architecture and design | 3 |
+| Use-case diagram and appropriate UML, DFD or flow diagrams | 4 |
+| Database or data design | 5 |
+| Module or component design | 6 |
+| Technology implementation | 7 |
+| Working MVP, prototype or equivalent proof of concept | 8 |
+| Test cases and initial validation | 9 |
+| User or stakeholder feedback | 10 |
+| Updated risk analysis | 11 |
+| Performance or accuracy results | 12 |
+| Screenshots or demo evidence | 14 (and Appendix B for planned screens) |
+| Statement of work completed and work remaining | 13 |
 
 ---
 
 ## 1. Project overview
 
-GoodLoop is a web platform, in the spirit of Luma but built for **social good**, where people discover and join local volunteering and welfare activities. Think blood-donation camps, food-donation drives, clothes collection drives, clean-ups, teaching sessions and other community work. Organisers publish an event, volunteers find it by cause, date and place, say they are interested, and organisers see who is coming. Admins keep the platform trustworthy by approving organisers and removing inappropriate listings.
+GoodLoop is a web platform, in the spirit of Luma but built for **social good**, where people discover and join local volunteering and welfare activities: blood-donation camps, food and clothes drives, clean-ups, teaching sessions and other community work.
 
-**Problem.** Local welfare drives are advertised through scattered chat groups and posters. Volunteers can't easily find them, and organisers can't tell how many people will show up.
+**Problem.** Local welfare drives are advertised through scattered chat groups and posters. Volunteers cannot easily find them, organisers cannot tell how many people will show up, and the groups behind them have no shared place to recruit, announce and talk to their members.
 
-**Goal of the MVP.** One place to find, filter and register interest in nearby volunteering events, with lightweight moderation. **The MVP is now functionally complete and live** (see §8).
+**What GoodLoop becomes.** Two layers on one platform:
 
-**Next phase.** Having reached the MVP with time to spare, the team plans to grow GoodLoop into an *organisations platform*: organisations with public profiles that people can join, announcements from organisation admins, members-only chat, organisation-owned events and welfare drives with goals. The full plan is in `docs/PLAN_ORGANISATIONS.md`, tracked as epic #61 with 36 task issues in six milestones (§13.3).
+1. **Discovery and registration (built).** Volunteers browse, search, filter and map events, then register interest. Approved organisers publish and manage events and see who registered. Admins moderate.
+2. **Organisations (planned).** Welfare groups create an organisation with a public profile. People join it (openly, by request or by invite). Organisation admins post announcements, members chat in a members-only channel, and events and drives live under the organisation, with goals and volunteer hours. Platform admins verify organisations and moderate content.
 
-> **Scope note for the evaluators.** The cause list in the database is `ENVIRONMENT, EDUCATION, HEALTH, COMMUNITY, ANIMALS, OTHER`. Blood donation maps to HEALTH, and food and clothes drives to COMMUNITY. Dedicated welfare categories and drive goals (e.g. 200 units of blood collected) are planned in the next phase (issue #93), not yet implemented.
+**Status at this submission.** Layer 1 is complete, live and tested. Layer 2 has a reviewed plan (`docs/PLAN_ORGANISATIONS.md`), a permission model, a data model and 36 sized, owned issues with acceptance criteria. Work on it starts after the team confirms the scope.
+
+> **Scope note.** The cause list in the database is `ENVIRONMENT, EDUCATION, HEALTH, COMMUNITY, ANIMALS, OTHER`. Blood donation maps to HEALTH and food and clothes drives to COMMUNITY. Dedicated welfare categories and drive goals (for example "200 units of blood collected") are planned (issue #93).
 
 ---
 
@@ -26,43 +49,86 @@ GoodLoop is a web platform, in the spirit of Luma but built for **social good**,
 
 ### 2.1 Stakeholders and roles
 
-| Role | Description |
-|---|---|
-| **Volunteer** (`USER`) | Browses, filters and registers interest in events; manages their registrations and profile. |
-| **Organiser** (`ORGANISER`) | Creates and manages their own events, reviews and manages registrations. Must be approved by an admin first. |
-| **Admin** (`ADMIN`) | Approves or rejects organiser accounts, removes inappropriate events, and sees platform statistics and the user list. |
+There are **two separate role systems**, so a person can be, for example, a platform Volunteer and also an Admin of one organisation and a Member of another.
+
+| Role | Level | Status | Description |
+|---|---|---|---|
+| **Volunteer** (`USER`) | Platform | Built | Browses, filters and registers interest in events; manages registrations and profile |
+| **Organiser** (`ORGANISER`) | Platform | Built | An individual approved by a platform admin; publishes and manages independent events and sees registrations |
+| **Admin** (`ADMIN`) | Platform | Built | Approves organisers, removes events, sees platform stats and users. Will also verify organisations and handle reports |
+| **Owner** | Organisation | Planned | Creates the organisation; transfers ownership or archives it |
+| **Admin** | Organisation | Planned | Manages members, settings, join requests and announcements |
+| **Organiser** | Organisation | Planned (proposed) | Creates and manages the organisation's events and sees their registrations; cannot manage members or settings |
+| **Moderator** | Organisation | Planned | Moderates chat: delete messages, mute and ban from chat |
+| **Member** | Organisation | Planned | Joins, reads announcements, chats, registers for the organisation's events |
+
+Organisation roles form a ladder (Member < Moderator < Organiser < Admin < Owner): each role includes everything below it, so one helper, `requireOrgRole(orgId, minRole)`, can enforce permissions everywhere.
 
 ### 2.2 Functional requirements
 
-| ID | Requirement | Owner | Status |
-|---|---|---|---|
-| FR1 | Browse opportunities and view event details | Anousha | **Done** (reads the database; only published events) |
-| FR2 | Organisers create and update listings (title, description, date, location, cause) | Aditya | **Done** (PR #33, #58) |
-| FR3 | Filter listings by date range, cause and location (in the URL) | Anousha | **Done** (tested against the database) |
-| FR4 | Volunteers register interest; organisers review registrations | Saransh (volunteer side), Aditya (organiser view) | **Done**: register and cancel, `/me`, organiser roster. Two security fixes open (#98, #99) |
-| FR5 | Admin reviews organiser accounts and removes listings | Saransh | **Done and verified**, plus stats and a searchable user list |
-| FR6 | Sign-up, login, role-based access, profile (name, password) | Saransh | **Done and verified** |
-| MAP | Events on an OpenStreetMap map; click-to-pin location picker | Saransh | **Built**; renders in the browser only (not yet verified visually, §9.3) |
-| O4 | Lightweight relevance ordering of events (optional) | Saransh | Not started (#21) |
+**MVP (all built and live)**
+
+| ID | Requirement | Status |
+|---|---|---|
+| FR1 | Browse opportunities and view event details (with map, add-to-calendar, copy link) | Built |
+| FR2 | Organisers create, update, publish, cancel, duplicate and delete listings | Built |
+| FR3 | Search and filter by keyword, cause, date range and location; sort soonest, newest or recommended; paginate; all in the URL | Built |
+| FR4 | Volunteers register interest and cancel; organisers review, export and manage registrations | Built |
+| FR5 | Admin approves or rejects organisers, removes events, sees platform stats and searches users | Built |
+| FR6 | Sign-up, login, role-based access, profile (name, password) | Built |
+| MAP | Events on an OpenStreetMap map with popups; click-to-pin location picker | Built, verified in a real browser |
+| O4 | Relevance ordering ("Recommended") from the user's past registrations | Built |
+| SEO | Search-engine metadata, sitemap, robots.txt, share image | Built |
+
+**Organisations platform (planned; issue numbers in section 13)**
+
+| ID | Requirement | Phase |
+|---|---|---|
+| FR7 | Any signed-in user can create an organisation; it stays hidden until a platform admin verifies it | 1 |
+| FR8 | Public organisation profile and a searchable directory (by cause and location) | 1 |
+| FR9 | Membership: join an open organisation, request to join, or join by invite link; leave; remove and ban members | 1 |
+| FR10 | Organisation roles and member management; transfer ownership; archive | 1 |
+| FR11 | Events belong to an organisation; org admins and organisers manage them; independent events keep working | 1 |
+| FR12 | Announcements: post, edit, pin and delete; members see them on the organisation page and in a feed | 2 |
+| FR13 | Notifications: in-app bell and list (announcements, join decisions, role changes, new events); email later | 2, 5 |
+| FR14 | Members-only chat per organisation with moderation (delete, mute, ban, report), rate limits and unread counts | 3 |
+| FR15 | Platform admin verifies, rejects and suspends organisations; reports queue; audit log; privacy controls | 4 |
+| FR16 | Welfare extras: drives with goals and progress, volunteer hours and attendance, organisation analytics | 5 |
 
 ### 2.3 Non-functional requirements
 
-| Area | Requirement |
-|---|---|
-| Security | Passwords hashed (bcrypt). Permissions enforced on the server, not only in the UI. Inputs validated with zod. Organisers may only modify their own events. |
-| Usability | Responsive layout (mobile first), accessible navigation (skip link, labelled controls, reduced-motion respected). Empty, loading and error states handled. |
-| Performance | Pages should respond in well under a second on a normal connection (§12). |
-| Maintainability | One owner per file, small PRs, CI on every PR. |
-| Deployability | `main` deploys automatically; the database schema is applied by committed migrations. |
+| Area | Requirement | Status |
+|---|---|---|
+| Security | Passwords hashed (bcrypt); permissions enforced on the server for every action, not only in the UI; every input validated with zod; ownership checks on every write; no secrets in the repository | Met for the MVP; to be extended by the permission matrix tests |
+| Privacy | Organisation admins see members' names and emails, so this is disclosed before joining; members can hide from public lists; account deletion anonymises chat messages | Planned (issue #91) |
+| Usability and accessibility | Responsive, mobile first; labelled controls; skip link; reduced motion respected; WCAG AA colour contrast; automated audit with zero findings | Met and measured (section 9) |
+| Performance | Page time to first byte well under 1 second; chat messages appear within about 5 seconds | Met for the MVP (section 12); chat target to be measured |
+| Maintainability | One owner per area, small PRs, CI on every PR, code review | Met |
+| Testability | Unit tests in CI; database-backed permission tests against a separate test branch | Unit tests built; permission tests planned (#63, #65) |
+| Deployability | `main` deploys automatically; schema changes are committed migrations | Met |
 
-### 2.4 Out of scope for the MVP, planned for the next phase
-Organisations, memberships, announcements, chat, notifications and welfare drive goals (see `docs/PLAN_ORGANISATIONS.md`). Still out of scope: payments, recurring events, ratings and an advanced recommendation engine.
+### 2.4 Design decisions
+
+| Decision | Status |
+|---|---|
+| Any signed-in user can create an organisation, pending admin verification | Agreed (issue #62: project owner and Anousha) |
+| Join policy is set per organisation: Open, Request to join, or Invite only | Agreed (#62) |
+| One members-only chat channel per organisation; polling transport first | Agreed (#62) |
+| In-app notifications first, email later | Agreed (#62) |
+| The platform `ORGANISER` role stays alongside organisations; existing events keep working | Agreed (#62) |
+| All phases of the plan are in scope (there is ample time) | Agreed (#62) |
+| An extra organisation-level "Organiser" role (event lead) between Moderator and Admin | **Proposed**; questions posted on #62, awaiting Anousha and Aditya |
+| Org organisers publish under a verified organisation without needing separate platform-organiser approval | **Proposed**; awaiting answers on #62 |
+| Chapters (parent and child organisations) | Deferred to a later phase |
+
+### 2.5 Out of scope
+Payments, direct messages, recurring events, ratings, a machine-learning recommender, and native mobile apps.
 
 ---
 
 ## 3. System architecture and design
 
-GoodLoop is a single Next.js application. There is no separate backend. Server components read data, Server Actions perform writes, and everything talks to one PostgreSQL database.
+GoodLoop is a single Next.js application with no separate backend. Server components read data, Server Actions perform writes, and everything talks to one PostgreSQL database. Dashed boxes are planned additions.
 
 ```mermaid
 flowchart LR
@@ -70,89 +136,120 @@ flowchart LR
     subgraph VC[Vercel: Next.js 15 App Router]
         M[Middleware: first gate by role]
         SC[Server components: reads]
-        SA[Server Actions: writes + zod validation]
+        SA[Server Actions: writes, zod validation, permission checks]
         AU[Auth.js v5: credentials + JWT]
+        PH["Permission helpers: requireRole, requireOrgRole"]:::planned
+        CH["Chat API: list / send / delete, polled every 3-5 s"]:::planned
+        NT["Notification fan-out on write"]:::planned
     end
     SC -->|Prisma 6| N[(Neon PostgreSQL)]
     SA -->|Prisma 6| N
     AU --> N
-    B -->|tiles| OSM[OpenStreetMap]
+    PH --> N
+    CH --> N
+    NT --> N
+    B -->|map tiles| OSM[OpenStreetMap]
+    NT -.->|later| EM["Email provider (Resend)"]:::planned
+    classDef planned stroke-dasharray: 5 5,stroke:#0f8a5f,fill:#ecfdf5,color:#064e3b;
 ```
 
-**Key design decisions**
-- **Server-side authorization.** Middleware redirects early, but every Server Action re-checks the role (`requireRole`, `requireApprovedOrganiser`) and ownership, so a forged request can't bypass the UI.
-- **JWT sessions** carry the user's id and role, so role checks don't need a database round trip. The navbar reads the user's name from the database so profile edits show immediately.
-- **Pooled vs direct connections.** The app uses Neon's pooled connection; migrations use the direct one.
+### 3.1 Key design decisions
+
+**Built**
+- **Server-side authorization.** Middleware redirects early, but every Server Action re-checks the role and ownership, so a forged request cannot bypass the UI. This was tested by replaying forged requests (section 9).
+- **JWT sessions** carry the user id and role, so role checks need no database round trip. The navbar reads the user's name from the database so profile edits show immediately.
+- **Public discovery shows only published events;** drafts and cancelled events stay hidden. The organiser's email never reaches the page.
 - **Filters live in URL search params,** so any search is a shareable link.
-- **Public discovery only shows published events,** so drafts and cancelled events stay hidden.
-- **Maps load only in the browser** (Leaflet via `next/dynamic` with SSR off).
-- **Contracts between modules** (fixed function signatures and exported components) let several people build in parallel.
+- **Maps load only in the browser** (Leaflet through `next/dynamic` with SSR off).
+- **Pooled and direct database connections:** the app uses Neon's pooled string, migrations use the direct one.
+
+**Planned (organisations)**
+- **One permission layer.** `requireOrgRole(orgId, minRole)` and its helpers are the only place organisation roles are checked, mirroring `requireRole` for platform roles. Server actions never check roles inline, and every cell of the permission matrix (Appendix A) becomes a test.
+- **Chat over polling, behind a small contract.** Vercel serverless functions cannot hold WebSocket connections. The chat uses short polling (every 3 to 5 seconds, only while the tab is visible) behind a transport-agnostic contract (`listMessages`, `sendMessage`, `deleteMessage`), so the transport can move to a managed real-time service (Pusher or Ably) later without changing the UI.
+- **Notifications on write.** Announcements, join decisions and role changes create notification rows with one batched insert per fan-out. The navbar bell reads them.
+- **Verification gate.** New organisations are hidden until a platform admin verifies them, the same idea as approving organiser accounts today. This is the main spam control.
+- **Backward compatibility.** `Event.organisationId` is nullable, so independent events keep working; all schema changes are additive.
 
 ---
 
 ## 4. Use-case, UML, DFD and flow diagrams
 
-### 4.1 Use-case diagram
+### 4.1 Use-case diagram (final system)
+
+Dashed items are planned.
 
 ```mermaid
 flowchart LR
     V([Volunteer])
-    O([Organiser])
-    A([Admin])
+    O([Platform Organiser])
+    OM([Organisation member / admin])
+    A([Platform Admin])
     subgraph GoodLoop
-        UC1(Sign up / log in)
-        UC2(Browse events)
-        UC3(Filter by date, cause, location)
-        UC4(View event details and map)
-        UC5(Register interest / cancel)
-        UC6(View my registrations)
-        UC11(Edit profile / change password)
-        UC7(Create and update own events)
-        UC12(Publish, unpublish, cancel, duplicate events)
-        UC8(View and manage registrations for own event)
-        UC13(Export volunteer list as CSV)
-        UC9(Approve or reject organisers)
-        UC10(Remove inappropriate events)
-        UC14(View platform stats and search users)
+        UC1(Sign up / log in / edit profile)
+        UC2(Browse, search, filter and map events)
+        UC3(Register interest / cancel / my registrations)
+        UC4(Create, publish, cancel, duplicate events)
+        UC5(View, manage and export registrations)
+        UC6(Approve or reject organisers)
+        UC7(Remove events; view stats and users)
+        UC8("Create an organisation"):::planned
+        UC9("Browse organisations and join / request / use invite"):::planned
+        UC10("Manage members, roles, requests, settings"):::planned
+        UC11("Post announcements; see member feed"):::planned
+        UC12("Chat with members; moderate chat"):::planned
+        UC13("Receive notifications"):::planned
+        UC14("Verify or suspend organisations; handle reports"):::planned
+        UC15("Record hours and drive progress"):::planned
     end
-    V --> UC1 & UC2 & UC3 & UC4 & UC5 & UC6 & UC11
-    O --> UC1 & UC7 & UC12 & UC8 & UC13 & UC11
-    O -. also .-> UC2
-    A --> UC1 & UC9 & UC10 & UC14 & UC11
+    V --> UC1 & UC2 & UC3 & UC8 & UC9 & UC13
+    O --> UC1 & UC4 & UC5
+    OM --> UC9 & UC10 & UC11 & UC12 & UC13 & UC15
+    A --> UC1 & UC6 & UC7 & UC14
+    classDef planned stroke-dasharray: 5 5,stroke:#0f8a5f,fill:#ecfdf5,color:#064e3b;
 ```
 
 ### 4.2 Data-flow diagram, level 0 (context)
 
 ```mermaid
 flowchart LR
-    V([Volunteer]) -- credentials, filters, registration --> S((GoodLoop))
-    S -- events, registration status --> V
-    O([Organiser]) -- event details, signup --> S
-    S -- registrations list --> O
-    A([Admin]) -- approval decisions, removals --> S
-    S -- pending organisers, stats, users --> A
+    V([Volunteer]) -- requests --> S((GoodLoop))
+    S -- events, status, messages --> V
+    O([Organiser / Org admin]) -- events, announcements --> S
+    S -- registrations, requests --> O
+    A([Platform admin]) -- approvals, moderation --> S
+    S -- queues, stats --> A
     S <--> D[(Neon PostgreSQL)]
+    S -- map tiles --> T[OpenStreetMap]
 ```
 
 ### 4.3 Data-flow diagram, level 1
 
 ```mermaid
-flowchart TD
+flowchart LR
     U([Users]) --> P1[1. Authenticate and manage profile]
     P1 <--> DB1[(User)]
     U --> P2[2. Discover events]
     P2 <--> DB2[(Event)]
     U --> P3[3. Register interest]
     P3 --> DB3[(Registration)]
-    U --> P4[4. Manage events: organiser]
+    U --> P4[4. Manage events]
     P4 --> DB2
-    U --> P5[5. Moderate: admin]
+    U --> P5[5. Moderate: platform admin]
     P5 --> DB1
     P5 --> DB2
     DB3 --> P4
+    U --> P6["6. Organisations and membership"]:::planned
+    P6 <--> DB4[(Organisation, Member, Invite)]:::planned
+    U --> P7["7. Announcements and notifications"]:::planned
+    P7 <--> DB5[(Announcement, Notification)]:::planned
+    U --> P8["8. Chat"]:::planned
+    P8 <--> DB6[(Message, ChatRead)]:::planned
+    P5 --> DB7[(Report, AuditLog)]:::planned
+    DB4 --> P4
+    classDef planned stroke-dasharray: 5 5,stroke:#0f8a5f,fill:#ecfdf5,color:#064e3b;
 ```
 
-### 4.4 Sequence diagram: organiser approval (implemented)
+### 4.4 Sequence diagram: organiser approval (built)
 
 ```mermaid
 sequenceDiagram
@@ -170,7 +267,7 @@ sequenceDiagram
     O->>App: Create event (allowed only when APPROVED)
 ```
 
-### 4.5 Sequence diagram: register interest (implemented)
+### 4.5 Sequence diagram: register interest (built)
 
 ```mermaid
 sequenceDiagram
@@ -186,29 +283,114 @@ sequenceDiagram
     App-->>V: "You're registered" (spots taken updates)
 ```
 
-### 4.6 Flow diagram: volunteer journey
+### 4.6 Sequence diagram: create and verify an organisation, then join (planned)
 
 ```mermaid
-flowchart LR
+sequenceDiagram
+    actor U as User
+    actor PA as Platform admin
+    actor M as Another user
+    participant App as GoodLoop
+    participant DB as Neon
+    U->>App: Create organisation (zod-validated)
+    App->>DB: Organisation(status=PENDING) + Member(role=OWNER)
+    PA->>App: Verify (requireRole ADMIN)
+    App->>DB: status = VERIFIED
+    App->>DB: Notification to owner
+    M->>App: Open /orgs/slug and press Join or Request
+    App->>App: policy OPEN? REQUEST? INVITE_ONLY? banned?
+    App->>DB: Member(ACTIVE) or Member(PENDING)
+    U->>App: Approve request (requireOrgRole ADMIN)
+    App->>DB: Member ACTIVE + Notification
+```
+
+### 4.7 Sequence diagram: announcement and chat (planned)
+
+```mermaid
+sequenceDiagram
+    actor AD as Org admin
+    actor M1 as Member A
+    actor M2 as Member B
+    participant App as GoodLoop
+    participant DB as Neon
+    AD->>App: Post announcement (requireOrgRole ADMIN)
+    App->>DB: Announcement + one batched insert of Notifications
+    M1->>App: Open app
+    App-->>M1: Bell shows 1 unread
+    M1->>App: sendMessage (ACTIVE member, rate limit, 1-1000 chars)
+    App->>DB: Message
+    loop every 3-5 s while the tab is visible
+        M2->>App: listMessages(after = last id)
+        App->>DB: indexed query on (org, time)
+        App-->>M2: new messages
+    end
+```
+
+### 4.8 State diagrams
+
+Event status (built) and organisation and membership lifecycles (planned):
+
+```mermaid
+stateDiagram-v2
+    [*] --> DRAFT
+    DRAFT --> PUBLISHED: publish
+    PUBLISHED --> DRAFT: unpublish
+    PUBLISHED --> CANCELLED: cancel
+    CANCELLED --> DRAFT: restore
+```
+
+```mermaid
+stateDiagram-v2
+    [*] --> PENDING: organisation created
+    PENDING --> VERIFIED: platform admin verifies
+    PENDING --> REJECTED: platform admin rejects
+    VERIFIED --> SUSPENDED: platform admin suspends
+    SUSPENDED --> VERIFIED: reinstated
+    VERIFIED --> ARCHIVED: owner archives
+```
+
+```mermaid
+stateDiagram-v2
+    [*] --> PENDING: request to join
+    [*] --> ACTIVE: open join or invite
+    PENDING --> ACTIVE: admin approves
+    PENDING --> [*]: denied or cancelled
+    ACTIVE --> BANNED: admin or moderator bans
+    ACTIVE --> [*]: leaves or removed
+    BANNED --> ACTIVE: unbanned
+```
+
+### 4.9 Flow diagram: user journeys (final)
+
+```mermaid
+flowchart TD
     L[Landing page] --> E[Browse /events]
-    E --> F[Apply filters]
-    F --> D[Open event details]
+    E --> F[Search, filter, sort]
+    F --> D[Open event page]
     D --> R{Logged in?}
     R -- No --> S[Sign up / log in]
     S --> D
     R -- Yes --> G[Register interest]
-    G --> M[See it in My registrations]
+    G --> M[My registrations]
+    L --> OR["Browse organisations"]:::planned
+    OR --> OP["Organisation profile"]:::planned
+    OP --> J["Join / request / invite"]:::planned
+    J --> OA["Announcements, events, chat"]:::planned
+    OA --> D
+    classDef planned stroke-dasharray: 5 5,stroke:#0f8a5f,fill:#ecfdf5,color:#064e3b;
 ```
 
 ---
 
 ## 5. Database and data design
 
-The database is PostgreSQL on **Neon**, accessed through **Prisma 6** with a multi-file schema (`prisma/schema/`), one file per area.
+PostgreSQL on **Neon**, accessed through **Prisma 6** with a multi-file schema (`prisma/schema/`), one file per area. The first diagram is what exists today, with two migrations applied (`init`, `event`). The second diagram is the planned organisations model; none of it exists yet.
+
+**Built (live today)**
 
 ```mermaid
 erDiagram
-    User ||--o{ Event : organises
+    User ||--o{ Event : "creates (organiser)"
     User ||--o{ Registration : makes
     Event ||--o{ Registration : receives
     User ||--o{ Account : has
@@ -235,7 +417,6 @@ erDiagram
         int capacity
         EventStatus status "DRAFT | PUBLISHED | CANCELLED"
         string organiserId FK
-        datetime createdAt
     }
     Registration {
         string id PK
@@ -245,232 +426,502 @@ erDiagram
     }
 ```
 
-- **Integrity:** `Registration` has a unique pair `(userId, eventId)`, so nobody registers twice. Deleting a user or event cascades to their registrations. Cancelling a registration deletes the row.
-- **Migrations:** two migrations are applied to production, `init` and `event` (the second was written to be safe on tables that already have rows). Schema changes are committed as migration folders and applied with `prisma migrate deploy` on each production deploy.
-- **Seed data:** one admin, one demo organiser, and 8 demo events covering blood donation, food and clothes drives, a river clean-up, tutoring, animal care, tree planting and a senior health check-up. The seed is idempotent (safe to re-run) and every demo description is marked "(Demo listing)".
-- **Planned (next phase):** organisations, memberships, invites, announcements, messages, notifications, reports and an audit log, all additive. The planned data model is in `docs/PLAN_ORGANISATIONS.md`.
+**Planned (organisations; all additive)**
+
+*Core: organisations, members, invites and events*
+
+```mermaid
+erDiagram
+    User ||--o{ OrganisationMember : "belongs to"
+    Organisation ||--o{ OrganisationMember : has
+    Organisation ||--o{ Invite : issues
+    Organisation ||--o{ Event : "owns (optional)"
+
+    Organisation {
+        string id PK
+        string slug UK
+        string name
+        JoinPolicy joinPolicy "OPEN | REQUEST | INVITE_ONLY"
+        Visibility visibility "PUBLIC | PRIVATE"
+        OrgStatus status "PENDING | VERIFIED | REJECTED | SUSPENDED | ARCHIVED"
+        string createdById FK
+    }
+    OrganisationMember {
+        string orgId FK
+        string userId FK
+        OrgRole role "OWNER | ADMIN | ORGANISER | MODERATOR | MEMBER"
+        MemberStatus status "ACTIVE | PENDING | BANNED"
+        datetime mutedUntil
+    }
+    Invite {
+        string token UK
+        string orgId FK
+        OrgRole role
+        datetime expiresAt
+        int maxUses
+    }
+    Event {
+        string id PK
+        string organisationId FK "new, nullable"
+    }
+```
+
+*Engagement: announcements, chat and notifications*
+
+```mermaid
+erDiagram
+    Organisation ||--o{ Announcement : posts
+    Organisation ||--o{ Message : "chat"
+    User ||--o{ Notification : receives
+    User ||--o{ Message : writes
+
+    Announcement {
+        string id PK
+        string orgId FK
+        string authorId FK
+        string title
+        boolean pinned
+    }
+    Message {
+        string id PK
+        string orgId FK
+        string authorId FK
+        string body
+        datetime deletedAt
+    }
+    Notification {
+        string id PK
+        string userId FK
+        NotifType type
+        json payload
+        datetime readAt
+    }
+```
+
+*Moderation: reports and audit log*
+
+```mermaid
+erDiagram
+    User ||--o{ Report : files
+    Organisation ||--o{ AuditLog : records
+
+    Report {
+        string id PK
+        string reporterId FK
+        ReportTarget targetType "ORG | MESSAGE | ANNOUNCEMENT | USER"
+        ReportStatus status "OPEN | RESOLVED | DISMISSED"
+    }
+    AuditLog {
+        string id PK
+        string actorId FK
+        string orgId FK
+        string action
+        json metadata
+    }
+```
+
+Also planned: `ChatRead (orgId, userId, lastReadAt)` for unread counts.
+
+**Integrity and design rules**
+- `Registration` has a unique pair `(userId, eventId)`, so nobody registers twice; deleting a user or event cascades. Cancelling deletes the row.
+- Planned: `OrganisationMember` is unique on `(orgId, userId)`; the last Owner cannot be demoted or removed; banned and pending members never count as members; message deletion is a soft delete so moderation history is kept; read notifications are deleted after 60 days.
+- **Migrations** are committed folders applied with `prisma migrate deploy` on each production deploy. Two are live. The `event` migration was rewritten to be safe on tables that already contain rows. All organisation changes will be additive, so existing events and users are untouched.
+- **Seed data:** one admin, one demo organiser and 8 demo events covering blood donation, food and clothes drives, a river clean-up, tutoring, animal care, tree planting and a senior health check-up. The seed is idempotent, never changes an existing account's password, and every demo description is marked "(Demo listing)".
+- **Privacy by design (planned):** the member list can be hidden; joining shows what organisation admins can see; account deletion removes memberships and registrations and anonymises messages; data export as JSON.
 
 ---
 
 ## 6. Module and component design
 
-| Module | Path | Responsibility |
-|---|---|---|
-| Auth and profile | `src/features/auth`, `src/lib/auth*.ts`, `src/app/me/profile` | Sign-up and login, Auth.js config, JWT with role; profile page to edit name and change password |
-| Session helpers | `src/lib/session.ts` | `getCurrentUser()`, `requireRole()`, `requireApprovedOrganiser()` |
-| Route protection | `src/middleware.ts` | Redirects by role for `/admin`, `/organiser`, `/me` |
-| Admin | `src/features/admin`, `src/app/admin` | Stats cards, organiser table (approve/reject), event table (remove), searchable user list |
-| Discovery | `src/features/discovery`, `src/app/events` | `getEvents(filters)`, `getEventById(id)` (published events only), filter bar, event cards and list |
-| Events and organiser area | `src/features/events`, `src/app/organiser` | `Event` type, `CAUSES`; create, update, delete, status, duplicate; dashboard with stats; registrations page and CSV export |
-| Registrations | `src/features/registrations`, `src/app/me` | `registerInterest`, `cancelRegistration`, `<RegisterButton>`, `getRegistrationsForEvent`, `getMyRegistrations`, My registrations page |
-| Map | `src/features/map` | `<EventsMap>` with marker popups and `<LocationPicker>` click-to-pin (Leaflet, browser only) |
-| Landing | `src/components/landing` | Hero with WebGL shader, features, how it works, trust, call to action |
-| Design system | `src/app/globals.css`, `src/components` | Theme and fonts, sticky navbar with mobile and user menus, logo and favicon, 404/error/loading pages, buttons, cards, inputs, badge, skeleton, textarea |
+| Module | Path | Status | Responsibility |
+|---|---|---|---|
+| Auth and profile | `src/features/auth`, `src/lib/auth*.ts`, `src/app/me/profile` | Built | Sign-up and login, Auth.js config, JWT with role; edit name and change password |
+| Session helpers | `src/lib/session.ts` | Built | `getCurrentUser()`, `requireRole()`, `requireApprovedOrganiser()` |
+| Route protection | `src/middleware.ts` | Built | Redirects by role for `/admin`, `/organiser`, `/me` |
+| Admin | `src/features/admin`, `src/app/admin` | Built | Stats, organiser approval, event removal, user search |
+| Discovery | `src/features/discovery`, `src/app/events` | Built | Search, filters, sort, ranking, pagination, event page, calendar download |
+| Events and organiser area | `src/features/events`, `src/app/organiser` | Built | Event CRUD, status, duplicate, dashboard, roster, CSV export (formula-injection safe) |
+| Registrations | `src/features/registrations`, `src/app/me` | Built | Register and cancel, `RegisterButton`, `rankEvents`, My registrations (upcoming and past tabs) |
+| Map | `src/features/map` | Built | Events map with popups; click-to-pin picker (Leaflet, browser only) |
+| Design system and landing | `src/components`, `src/app/globals.css` | Built | Theme, navbar with mobile and user menus, logo, 404, error and loading pages, landing page |
+| SEO | `src/app/robots.ts`, `sitemap.ts`, `opengraph-image.tsx`, `src/lib/site.ts` | Built | Metadata, sitemap, robots, share image, structured data |
+| Organisation permissions | `src/lib/org-permissions.ts` | Planned | `requireOrgMember`, `requireOrgRole`, role ladder, table-driven tests |
+| Organisations | `src/features/organisations`, `src/app/orgs`, `src/app/invite` | Planned | Create, profile, directory, join and requests, invites, member management, settings |
+| Announcements and feed | `src/features/announcements` | Planned | Post, pin, edit, delete; member feed |
+| Notifications | `src/features/notifications` | Planned | Fan-out helper, bell, notification list |
+| Chat | `src/features/chat` | Planned | Contract, actions, polling UI, moderation, rate limits, unread counts |
+| Platform moderation | `src/features/admin` (extended) | Planned | Verify and suspend organisations, reports queue, audit log |
 
-**Contracts.** Each owner exports fixed signatures (e.g. `getEvents(filters)`, `<RegisterButton eventId />`) so modules plug together; owners can replace internals without breaking others.
+**Route inventory**
+
+| Built | Planned |
+|---|---|
+| `/`, `/events`, `/events/[id]`, `/events/[id]/ics`, `/login`, `/signup`, `/me`, `/me/profile`, `/organiser`, `/organiser/new`, `/organiser/[id]/edit`, `/organiser/[id]/registrations`, `/admin`, `/robots.txt`, `/sitemap.xml`, `/opengraph-image` | `/orgs`, `/orgs/new`, `/orgs/[slug]`, `/orgs/[slug]/chat`, `/orgs/[slug]/manage/{members,requests,settings}`, `/invite/[token]`, `/me/organisations`, `/feed`, `/notifications` |
+
+**Contracts.** Each area exports fixed signatures (for example `getEvents(filters)`, `rankEvents(events, user)`, `<RegisterButton eventId />`, and in future `requireOrgRole`) so modules plug together and owners can change internals without breaking others. The ownership table is in `CLAUDE.md` and `.github/CODEOWNERS`.
 
 ---
 
 ## 7. Technology implementation
 
-| Layer | Technology |
-|---|---|
-| Framework | Next.js 15 (App Router) + TypeScript |
-| UI | Tailwind CSS 3, shadcn/ui, lucide icons, Inter and Plus Jakarta Sans (`next/font`), raw WebGL shader on the landing page |
-| Database | PostgreSQL on Neon, Prisma 6 |
-| Auth | Auth.js v5, credentials provider, JWT sessions, bcrypt |
-| Validation | zod (every Server Action) |
-| Maps | Leaflet + react-leaflet + OpenStreetMap tiles |
-| Dates | date-fns |
-| Hosting | Vercel (auto-deploy from `main`, preview deployments per PR; the repository is public) |
-| CI | GitHub Actions: prisma validate, lint, typecheck, build |
-| Package manager | pnpm |
+| Layer | Technology | Why |
+|---|---|---|
+| Framework | Next.js 15 (App Router) and TypeScript | Server components and Server Actions give one codebase for UI and backend; strong typing |
+| UI | Tailwind CSS 3, shadcn/ui, lucide icons, Inter and Plus Jakarta Sans, raw WebGL on the landing page | Fast, consistent, accessible components with no extra runtime |
+| Database | PostgreSQL on Neon, Prisma 6 | Relational integrity for registrations and memberships; serverless Postgres with branching |
+| Auth | Auth.js v5, credentials provider, JWT sessions, bcrypt | Simple, no external identity dependency |
+| Validation | zod on every Server Action | One schema for runtime validation and types |
+| Maps | Leaflet, react-leaflet, OpenStreetMap | Free, no API key |
+| Testing | Vitest (unit), scripted end-to-end checks, Playwright (screenshots) | See section 9 |
+| Hosting | Vercel, automatic deploys from `main`, a preview per PR | Zero-ops deployment |
+| CI | GitHub Actions: prisma validate, lint, typecheck, unit tests, build | Blocks a merge on failure |
+| Planned | Resend (email), a managed real-time service (Pusher or Ably) only if polling proves too slow | Both optional and isolated behind small contracts |
 
-**Engineering process.** Branch per task, PRs into `main` only, squash merge, branch protection (1 approval, code-owner review, required CI check), CODEOWNERS per area, a PR template with a checklist, and code review of teammates' PRs (with Copilot reviews). Work is tracked in GitHub issues and milestones.
+**Engineering process.** Branch per task, pull requests into `main` only with squash merge, branch protection (a review, code-owner review and the required CI check), CODEOWNERS per area, a pull request template with a checklist, written code reviews of teammates' PRs, GitHub issues, milestones and a project board. The repository is public under the MIT License. Part of the code was written with AI assistance (documented in `CLAUDE.md`); every change goes through the same review, tests and CI as hand-written code.
+
+**Codebase size (19 November 2026):** 98 source files and about 5,100 lines of TypeScript and TSX in `src`, 2 database migrations, 18 unit tests.
 
 ---
 
 ## 8. Working MVP and prototype
 
-The prototype is **live** at https://goodloop-pi.vercel.app, connected to the production Neon database. Every merge to `main` deploys automatically; the latest production deploy is healthy.
+The prototype is **live** at https://goodloop-pi.vercel.app, connected to the production Neon database, and redeploys on every merge to `main`. Screenshots of each screen below are in section 14.
 
-**Working now**
-- **Landing page** explaining the product, with an animated shader hero.
-- **Accounts:** sign-up (volunteer or organiser), login with role-based redirects, organisers start `PENDING`, and a profile page to edit your name and change your password.
-- **Discovery** (`/events`): events read from the database, filters (cause, date range, location) in the URL, event detail pages, a real **map** with marker popups, empty, loading and error states. Drafts and cancelled events are hidden.
-- **Registration:** a Register button on each event that shows the right state (log in, register, registered with Cancel, full, ended, you organise this). Spots taken are shown. `/me` lists upcoming and past registrations with cancel.
-- **Organiser area:** dashboard with stats, create and edit forms with a click-to-pin map, publish, unpublish, cancel and duplicate events, delete with confirmation, a per-event volunteer roster with CSV export, and clear pending and rejected screens.
-- **Admin panel** (`/admin`): platform stats, approve or reject organisers, remove events, and a searchable user list.
-- **Design system:** new theme, sticky navbar with a mobile menu and user menu, logo and favicon, styled login and sign-up, and 404, error and loading pages.
-- **Seeded demo data** (8 events) and a production deploy with both migrations applied.
+| Area | What works today |
+|---|---|
+| Landing page | Animated hero, features, how it works, trust section, call to action (screenshots 1, 2) |
+| Accounts | Sign-up as volunteer or organiser; login with role redirects; organisers start pending; profile with name and password change (7, 8, 14, 15) |
+| Discovery | Keyword search, cause, date and location filters, sort (soonest, newest, recommended), pagination; real map with popups; event page with spots left, add-to-calendar and copy link (3 to 6, 20) |
+| Registration | Register and cancel from the event page, capacity and ended-event rules, My registrations with upcoming and past tabs (12, 13) |
+| Organiser area | Dashboard with stats, create and edit with a map pin, publish, unpublish, cancel, duplicate, delete with confirmation, volunteer roster with CSV export, pending and rejected screens (16, 17, 21, 18) |
+| Admin | Platform stats, approve or reject organisers, remove events, user search (19) |
+| Platform | Responsive layout with mobile menu, accessible navigation, 404, error and loading pages, SEO metadata, sitemap and a share image (9 to 11) |
+| Data | 8 seeded demo events, two migrations applied, rotated demo-account passwords |
 
-**Known gaps**
-- Two security fixes from code review are open: #98 (an organiser could delete another event's registration) and #99 (CSV export is open to spreadsheet formula injection). Both are assigned to Aditya.
-- Unknown URLs show a "not found" page but return HTTP 200 instead of 404 on event pages (§9.2).
-- The default seeded passwords still work on the public site (§11).
-- Several visuals (map rendering, mobile layouts, the redesign) have not been checked in a browser by the author of this report (§9.3).
+**Not built yet:** everything in the Planned rows of sections 2, 5 and 6 (organisations, membership, announcements, notifications, chat, platform moderation of organisations, drives and volunteer hours).
 
 ---
 
 ## 9. Test cases and initial validation
 
-There is **no automated test suite in the repository yet** (issue #63 sets one up). Validation so far is CI checks plus scripted end-to-end checks run against the real Neon database and the live deployment. The scripts were throwaway and are not committed; converting them into automated tests is the first task of the next phase.
+### 9.1 Automated checks (run on every pull request)
+`prisma validate`, ESLint, TypeScript typecheck, **18 unit tests** (Vitest) and `next build`. All pass on `main`. Unit tests cover the ranking function (10), the CSV formula-injection guard (3) and the discovery queries (5). The ranking code was deliberately broken twice (ignoring cause affinity, and not pushing registered events last), and each break made exactly the matching test fail, so these tests do not pass vacuously. A pull request also gets a Vercel preview build.
 
-### 9.1 Automated checks (every PR)
-`prisma validate` · ESLint · TypeScript typecheck · `next build`. All pass on `main`. Pull requests also get a Vercel preview build.
+### 9.2 Scripted end-to-end and validation results
 
-### 9.2 Scripted end-to-end results
+These ran against the real Neon database and the live site, with throwaway accounts and events that were deleted afterwards. The scripts are throwaway and are not committed; converting them into repository tests is the first task of the next phase (#63).
 
-| Suite | Where | Result | What it covered |
-|---|---|---|---|
-| Core flows | Live site | **54 of 55 passed** | Public pages, filters, anonymous redirects, seeded logins, wrong password, signup (volunteer and organiser, duplicates, short password), role access, pending organiser blocked, admin approval, organiser create, edit, delete, ownership of other organisers' events (replayed actions denied), status kept on edit, admin removing an event |
-| Registration and maps | Local, real database | **25 of 25** | Register, double registration, `/me`, organiser roster visibility, another user cannot cancel, organiser cannot register for own event, full event, ended event, draft hidden, map placeholders render |
-| Discovery from the database | Local, real database | **7 of 7** plus leak checks | Only published events listed; cause, location, from, to and date-range filters; empty state; published detail opens; draft and cancelled pages leak no title, description or address |
-| Admin stats and profile | Local, real database | **20 of 20** | Stat cards match database counts; user search; non-admins blocked; profile name update; wrong, mismatched, too-short and reused passwords rejected; a valid change logs in with the new password and not the old |
-| Navbar and design | Local | **10 of 10** | Logged-out, admin and organiser navbar, sticky and blur, mobile menu button, skip link, active link, favicon, custom 404 |
-| Registration smoke | Local, after redesign | **6 of 6** | Register, registered state, `/me`, cancel still work with the restyled components |
-
-More than 120 checks passed in total. **One failing check:** an unknown event id shows the "not found" page but returns HTTP 200, not 404 (the page streams before the not-found is raised). It is cosmetic and low priority.
-
-All test data was deleted after each run. Two of the early scripts had setup bugs of their own, which were found and fixed before the numbers above were taken.
-
-### 9.3 Defects and findings from validation and code review
-
-| Finding | Where found | Status |
+| Suite | Result | What it covered |
 |---|---|---|
-| Empty `AUTH_SECRET` caused a 500 on every auth call | Validation | Fixed (configuration) |
-| Malformed `AUTH_URL` on Vercel broke the whole site | Validation | Fixed (configuration) |
-| Editing a draft or cancelled event silently republished it | Review of PR #33 | Fixed |
-| Migration added required columns without defaults, unsafe on non-empty tables | Review of PR #33 (and Copilot) | Fixed |
-| Teammates' commits blocked from deploying (private repository on a free plan) | Merge of PR #33 | Fixed by making the repository public |
-| `declineRegistration` deletes by id without checking the event | Review of PR #58 | **Open (#98)** |
-| CSV export vulnerable to formula injection | Review of PR #58 | **Open (#99)** |
+| Core flows (live site) | 54 of 55 | Public pages, filters, anonymous redirects, seeded logins, wrong password, sign-up and its rejections, role access, pending organiser blocked, admin approval, organiser create, edit and delete, replayed requests from another organiser denied, status kept on edit, admin removing an event |
+| Registration and maps | 25 of 25 | Register, double registration, My registrations, roster visible only to the event's organiser, another user cannot cancel, organiser cannot register for own event, full and ended events, drafts hidden |
+| Discovery from the database | 7 of 7 plus leak checks | Only published events; every filter; empty state; draft and cancelled pages leak nothing |
+| Admin stats and profile | 20 of 20 | Stat cards match database counts; user search; profile and password rules; new password works and the old one does not |
+| Recommended sort | 14 of 14 | Registered event goes last, same-cause event moves from position 7 to 1, signed-out and no-history users get soonest order, filters and paging unaffected |
+| Navbar and design, tabs, registration smoke | 25 checks | Navbar for each role, mobile menu control, skip link, 404, tab behaviour, register and cancel after the redesign |
+| Search-engine readiness | 23 of 23 | Title, description, Open Graph and Twitter tags, canonical link, structured data, robots rules, sitemap contents, share image is a 1200 by 630 PNG |
+| Password rotation (live) | 5 of 5 | New passwords log in, old defaults are rejected |
+| Accessibility audit (live, 11 pages) | **0 findings** (17 at the first run) | Language, title, one h1, heading order, landmarks, duplicate ids, ARIA references, form labels, button and link names |
+| Browser screenshots (Chromium) | 21 captured | Every screen in section 14 rendered in a real browser, including maps with tiles and popups |
 
-### 9.4 Not yet tested
-Map and location-picker behavior in a real browser (only the server-rendered placeholder and the build were checked), mobile devices and layouts, the visual result of the redesign, the organiser CSV export itself, behavior under many concurrent users (capacity is checked just before inserting, so two simultaneous registrations could exceed capacity by one), and time-zone handling of event times.
+About 170 scripted checks passed in total. **One known minor failure:** an unknown event id shows the "not found" page but returns HTTP 200 instead of 404 (the page streams before the not-found is raised).
+
+**Colour contrast (WCAG AA needs 4.5 to 1):** body text 16.8, muted text 5.4, white on primary 5.0, primary text 4.8, white on destructive 4.9. All pass.
+
+### 9.3 Security validation
+The strongest evidence is the authorization bug found in code review of PR #58 and its fix:
+- **Reproduced on `main`:** an organiser sent a forged request that deleted another organiser's registration.
+- **After the fix (PR #111):** the same forged request is blocked, the other registration survives, and a legitimate removal of one's own volunteer still works.
+- A related spreadsheet formula-injection hole in the CSV export (a volunteer could register with the name `=HYPERLINK(...)`) was fixed and covered by tests.
+- A repository-wide scan found no secrets or credentials in tracked files or history; default passwords were removed from the repo and rotated in production.
+
+### 9.4 Defects found and fixed
+
+| Finding | Found by | Status |
+|---|---|---|
+| Empty `AUTH_SECRET` and a malformed `AUTH_URL` broke authentication in production | Validation | Fixed |
+| Editing a draft or cancelled event silently republished it | Review of PR #33 | Fixed |
+| Migration added required columns without defaults (unsafe on non-empty tables) | Review of PR #33 and Copilot | Fixed |
+| Teammates' commits were blocked from deploying on the free plan | Merge of PR #33 | Fixed (repository made public) |
+| `declineRegistration` deleted by id without checking the event | Review of PR #58 | Fixed and verified (#111) |
+| CSV export open to formula injection | Review of PR #58 | Fixed (#111) |
+| Default passwords in the public README and live | Review | Removed and rotated (#103) |
+| Navbar ARIA reference, duplicate logo ids, heading levels | Accessibility audit | Fixed (#106, #110, #111) |
+
+### 9.5 Test plan for the organisations phase
+- **Permission matrix tests:** a table-driven test for every role by action cell in Appendix A (14 actions across 7 columns), run against a dedicated Neon test branch that tests refuse to run against production (#63, #65).
+- **Server Action tests:** allowed role, denied roles, logged-out users, banned and pending members, duplicate actions and the last-owner rule.
+- **Chat:** non-members cannot list or send, deleted messages never leak their body, rate limit rejects floods, pagination is stable.
+- **Load check:** measure the polling endpoint with a realistic number of concurrent members before declaring phase 3 done.
+- **Manual end-to-end run** recorded in each phase's pull request, and the accessibility audit re-run on every new page.
+
+### 9.6 Not yet tested
+Behaviour on real phones and other browsers, concurrent registrations at the capacity limit (capacity is checked just before inserting, so two simultaneous registrations could exceed it by one), time-zone handling of event times, and keyboard and screen-reader behaviour (only the static audit was done).
 
 ---
 
 ## 10. User and stakeholder feedback
 
-**Not collected yet.** The product has not been put in front of real volunteers or organisers. Planned before the final evaluation:
-- a short walkthrough with 5 to 8 volunteers (students and local NGO contacts) using a task script (find an event, filter it, register);
-- one organiser interview about how they run blood-donation or food-drive sign-ups today and what an organisation-based platform would need;
-- a short feedback form (ease of use, missing features), with results summarised in the final report.
+**Not collected yet.** The product has not been put in front of real volunteers or organisers, and this report does not claim any feedback. Planned before the final evaluation:
+- a walkthrough with 5 to 8 volunteers (students and local NGO contacts) on a task script: find an event, filter it, register, find an organisation and join it;
+- interviews with 1 or 2 organisers of blood-donation or food drives about how they run sign-ups and announcements today, and whether organisation profiles, announcements and chat match their needs;
+- a short feedback form (ease of use, missing features), summarised in the final report.
 
-Feedback will also be used to confirm which phases of the organisations plan matter most.
+Feedback will also be used to confirm which organisation features matter most.
 
 ---
 
 ## 11. Updated risk analysis
 
-| Risk | Likelihood | Impact | Mitigation / status |
+| Risk | Likelihood | Impact | Mitigation and current status |
 |---|---|---|---|
-| Default seeded passwords on a public site and public README | **High** | High | **Open.** Must be reset before real users; the README should stop listing them (#18) |
-| Open security findings (#98, #99) already merged to production | Medium | Medium to high | Assigned to Aditya; both are small fixes. Hard to exploit today, but should be fixed promptly |
-| Local development and testing ran against the production database (no separate dev branch yet) | Medium | High | Create a Neon dev and test branch before the next phase; tests must refuse to run against production (#63) |
-| Secret leakage (a database password was pasted into chat during setup) | Medium | High | Rotate credentials; never commit `.env*` (the repository history was scanned and is clean) |
-| No automated tests, so regressions are possible | Medium | Medium | Test setup and permission tests are the first tasks of the next phase (#63, #65) |
-| Misconfigured environment variables break production | Medium | High | **Occurred twice.** `.env.example` documents them; verify the live site after each env change |
-| Scope growth (organisations, chat) | Medium | Medium | Plan is phased so each phase is demoable; scope needs team sign-off (#62); there is plenty of time before the final evaluation |
-| A team member is not contributing | Medium | Medium | Samaksh's areas were reassigned and are now built; issue owners can be rebalanced |
-| Chat abuse and spam (next phase) | Medium | High | Organisation verification, membership-only chat, rate limits, moderation, reports (phases 3 and 4) |
-| Fake or abusive listings | Medium | High | Admin approval of organisers; admin removal of events |
-| Unauthorized access to organiser or admin actions | Low | High | Role and ownership checks on the server for every action; replayed-request tests |
+| Permission bugs in the new organisation actions (the largest technical risk) | Medium | High | One set of helpers, table-driven matrix tests, replayed-request tests, review focused on ownership checks. A real bug of this kind was already found and fixed in the MVP |
+| Chat abuse and spam | Medium | High | Organisation verification, members-only chat, rate limits, moderation tools, reports, audit log (phases 3 and 4) |
+| Privacy of member data | Medium | High | Disclosure before joining, option to hide from lists, account deletion, data export (#91) |
+| Polling load on the database and free-tier limits | Medium | Medium | Poll only while the tab is visible, indexed queries, small pages; load check before sign-off; managed real-time service as a fallback |
+| Scope growth (about 36 new tasks) | Medium | Medium | Independent, demoable phases; team sign-off recorded on #62; phases 1 and 2 are the must-have core |
+| A team member is not contributing | Medium | Medium | Samaksh's areas were reassigned and built; issue owners can be rebalanced; sizes are visible on the board |
+| Open role-hierarchy decision (org-level Organiser, relationship to platform organisers) | Medium | Medium | Questions posted on #62; the permission matrix is written so one more role is a small change |
+| Local development and tests ran against the production database | Medium | High | **Open.** A separate Neon dev and test branch is being set up; tests will refuse to run against production |
+| A database password was pasted into chat during setup | Medium | High | **Open.** Rotate the credential; never commit `.env*` (the history was scanned and is clean) |
+| Misconfigured environment variables break production | Medium | High | Occurred twice and was fixed. `.env.example` documents them; the live site is re-checked after each change |
+| Code written with AI assistance may contain subtle defects | Medium | Medium | Same review, tests and CI as hand-written code; reviews have already caught real defects |
+| Licensing and ownership (the MIT license needs every contributor's agreement; the university may have IP rules) | Low | Medium | Confirm with all contributors and check the course policy before relying on it |
+| Fake or abusive listings | Medium | High | Admin approval of organisers; organisation verification; admin removal; reports queue |
 | Free-tier limits (Neon, Vercel) | Low | Medium | Usage is low; monitor |
 
 ---
 
 ## 12. Performance and accuracy results
 
-Measured with `curl` against the live site on 18 November 2026, from one location, three samples each. They are indicative only and not a load test.
+Measured with `curl` against the live site on 19 November 2026 from one location, three samples each. These are indicative, not a load test.
 
-| Page | Status | Time to first byte | Total time | Size |
+| Page | Status | Time to first byte | Total time (average) | Size |
 |---|---|---|---|---|
-| `/` (landing) | 200 | 0.62 to 0.97 s | 0.63 to 1.16 s | 103 KB |
-| `/events` (8 events) | 200 | 0.55 to 0.67 s | 0.57 to 0.87 s | 61 KB |
-| `/events/<id>` | 200 | 0.33 to 0.41 s | 0.39 to 0.53 s | 24 KB |
-| `/login` | 200 | 0.35 to 0.37 s | 0.36 to 0.37 s | 18 KB |
-| `/signup` | 200 | 0.35 to 0.40 s | 0.35 to 0.40 s | 19 KB |
+| `/` (landing) | 200 | 0.39 to 0.44 s | 0.47 s | 106 KB |
+| `/events` | 200 | 0.31 to 0.40 s | 0.47 s | 93 KB |
+| `/events?sort=recommended` | 200 | 0.31 to 0.39 s | 0.43 s | 94 KB |
+| `/events/<id>` | 200 | 0.34 to 0.57 s | 0.48 s | 46 KB |
+| `/login` | 200 | 0.31 to 0.40 s | 0.36 s | 22 KB |
+| `/sitemap.xml` | 200 | 0.39 to 0.40 s | 0.40 s | 1 KB |
 
-- The landing page is the slowest and largest page, at about 0.6 to 1.0 s for the first byte. The events page now queries the database, which adds some time compared with the earlier sample-data version. A first request after a quiet period can be slower because of serverless cold starts.
-- The landing shader renders at half resolution, pauses when off-screen, and shows a static frame for visitors who prefer reduced motion.
-- Accuracy measures don't apply yet, because there is no ranking or ML component. If the O4 relevance ordering is built, it will be evaluated against a small hand-labelled set.
-- **Not yet measured:** database query latency under load, Lighthouse scores, and real-device performance. These are planned for the final evaluation.
+- **Targets:** time to first byte under 1 second (met on every page).
+- **Bundle sizes** from the production build: 103 KB of JavaScript shared by all pages, and between 103 and 122 KB first-load JavaScript per route.
+- **Rendering:** the landing shader runs at half resolution, pauses off-screen and shows a static frame for visitors who prefer reduced motion.
+- **Ranking accuracy:** there is no machine-learning component. The "Recommended" sort is a deterministic score (how soon, how often the user registered for that cause, distance when known) with 10 unit tests and a 14-check end-to-end run; no user study has been done.
+- **Chat (planned), estimate not yet measured:** with polling every 4 seconds, 200 members chatting at once is about 50 requests per second against an indexed query on `(organisation, time)`. This will be load-checked before phase 3 is closed, and a managed real-time service is the fallback.
+- **Not yet measured:** database query latency under load, Lighthouse scores and real-device performance.
 
 ---
 
 ## 13. Statement of work
 
 ### 13.1 Completed
-- Repository, CI, PR template, CODEOWNERS, branch protection on `main`, public repository.
-- Next.js app with layout, role-based middleware, shared UI kit and design system.
-- Neon database, Prisma schema, **two migrations applied**, idempotent seed with demo events.
-- Auth: sign-up and login with roles and organiser status; profile page (name, password). Verified end to end.
-- **Admin panel (FR5):** approve and reject organisers, remove events, platform stats, user list with search.
-- **Discovery (FR1, FR3):** event cards, filters in the URL, list and detail pages, reading the database (published only), with empty, loading and error states.
-- **Registration (FR4):** register and cancel, capacity, ended and own-event rules, `/me`.
-- **Organiser area (FR2, FR4):** create, edit, status, duplicate, delete, dashboard with stats, roster with CSV export, pending and rejected screens.
-- **Maps:** real events map with popups; click-to-pin location picker.
-- **Landing page** and **design refresh** (theme, navbar, logo, favicon, auth pages, 404, error and loading pages).
-- **Production deployment** on Vercel with automatic deploys, tested end to end on the live URL.
-- **Organisations plan** and 36 task issues with acceptance criteria.
-- 13 pull requests merged through CI (10 by Saransh, 2 by Aditya, 1 by Anousha), with written code reviews on two teammates' PRs (#33 and #58) that found and fixed real defects.
+- **Foundation:** repository, CI with unit tests, pull request template, CODEOWNERS, branch protection, MIT license, public repository, project board and milestones.
+- **Platform:** Next.js app, role-based middleware, design system with navbar and mobile menu, logo and favicon, accessible 404, error and loading pages, SEO (metadata, sitemap, robots, share image).
+- **Data:** Neon database, two migrations, idempotent seed with demo events.
+- **Accounts:** sign-up, login, roles, organiser approval, profile and password change; no default passwords.
+- **Discovery (FR1, FR3, O4):** search, filters, sort including Recommended, pagination, event page, calendar download, real database queries.
+- **Registration (FR4):** register and cancel, capacity and ended rules, My registrations with tabs.
+- **Organiser area (FR2, FR4):** event CRUD, status, duplicate, dashboard, roster with safe CSV export.
+- **Maps:** events map with popups and click-to-pin picker.
+- **Admin (FR5):** organisers, event removal, stats, user search.
+- **Quality:** about 170 scripted checks, 18 unit tests, a security bug reproduced and fixed, an accessibility audit down to zero findings, written reviews of teammates' PRs.
+- **Planning:** the organisations plan (roles, permission matrix, data model, phases) and 36 sized issues with acceptance criteria, grouped in six milestones and linked under epic #61.
+- **Production deployment** on Vercel with automatic deploys, verified end to end.
 
-### 13.2 Remaining for the final evaluation (MVP follow-ups)
+### 13.2 Team contributions (pull requests merged into `main`)
+
+| Member | Merged PRs | Main contributions |
+|---|---|---|
+| Saransh | 16 | Setup and deployment, auth and profile, admin, registrations, maps, design system, landing page, seed, tests, SEO, security and accessibility fixes, plan and report |
+| Aditya | 3 | Event model, organiser dashboard and forms, event status and duplication, roster and CSV export, security and accessibility fixes (#33, #58, #111) |
+| Anousha | 3 | Discovery UI, search, sort, pagination, event page redesign, calendar download, Recommended sort (#31, #102, #110) |
+| Samaksh | 0 | No contributions so far; his areas were reassigned and built |
+
+### 13.3 Remaining for the final evaluation
+
+**MVP follow-ups**
 
 | Item | Issue | Owner |
 |---|---|---|
-| Fix `declineRegistration` ownership check | #98 | Aditya |
-| Fix CSV formula injection | #99 | Aditya |
-| Reset default seeded passwords; remove credentials from the README | #18 | Saransh |
-| Final README pass; close the foundation issue | #18, #1 | Saransh |
-| Relevance ordering `rankEvents` (optional) | #21 | Saransh |
-| Accessibility and consistency pass | #45 | Saransh |
-| Visual verification of the landing page, maps and `/me` against their issues | #38, #40, #42 | Saransh |
-| Not-found pages return HTTP 404 instead of 200 | new | Anousha |
-| Create a Neon dev and test branch; rotate database credentials | new | Saransh |
-| Automated tests (actions, queries, permission checks) | #63 | Saransh |
-| User feedback sessions and results (§10); performance measurements (§12) | new | Team |
-| Screenshots and demo evidence (§14) | new | Team |
+| Keyboard and screen-reader accessibility checks | #45 | Saransh |
+| Per-event page titles, share cards and structured data | #112 | Anousha |
+| Create a separate Neon dev and test branch; rotate the database credential | new | Saransh |
+| Database-backed automated tests (permissions, actions) | #63 | Saransh |
+| User feedback sessions (section 10) and Lighthouse and load measurements (section 12) | new | Team |
+| Real-browser checks of phone layouts | new | Team |
+| Unknown event ids should return HTTP 404 | new | Anousha |
 
-### 13.3 Next phase: organisations platform
+**Organisations platform.** Defined in `docs/PLAN_ORGANISATIONS.md` and tracked as epic #61. Each phase can be demonstrated on its own. Sizes are S about a day, M a few days, L a week or more.
 
-Defined in `docs/PLAN_ORGANISATIONS.md` and tracked as epic #61. Each phase can be demonstrated on its own.
+| Phase | Deliverable | Issues | Size |
+|---|---|---|---|
+| 0 | Team sign-off on scope; automated test setup | #62, #63 | 1 S, 1 M |
+| 1 | Organisations and membership: schema, permission helpers, create, profile, directory, join and requests, invites, member management, settings, org-owned events, migration of existing data, My organisations | #64 to #76 | 3 S, 9 M, 1 L |
+| 2 | Announcements, member feed, notifications (bell and list) | #77 to #81 | 5 M |
+| 3 | Members-only chat: contract, actions, polling UI, moderation, rate limits, unread counts | #82 to #87 | 2 S, 2 M, 2 L |
+| 4 | Verify and suspend organisations, reports queue, audit log, privacy, accessibility pass | #88 to #92 | 2 S, 3 M |
+| 5 | Welfare extras: drives with goals, volunteer hours, email, analytics, final documentation | #93 to #97 | 1 S, 2 M, 2 L |
 
-| Phase | Deliverable | Issues |
-|---|---|---|
-| 0 | Team sign-off on scope; automated test setup | #62, #63 |
-| 1 | Organisations and membership: create, profile, directory, join and request, invites, roles, member management, org-owned events, migration of existing data | #64 to #76 |
-| 2 | Announcements, member feed, notifications | #77 to #81 |
-| 3 | Members-only chat with moderation, limits and unread counts (polling transport) | #82 to #87 |
-| 4 | Organisation verification, reports queue, audit log, privacy, accessibility pass | #88 to #92 |
-| 5 | Welfare extras: drives with goals, volunteer hours, email, analytics, documentation | #93 to #97 |
+Total: 36 issues (9 S, 22 M, 5 L). Suggested owners: Saransh for the schema, permissions, chat, notifications and moderation; Anousha for the organisation pages and feed; Aditya for member management, settings, org-owned events, announcements UI, drives, hours and analytics. Phases 1 and 2 are the must-have core, and chat follows once those are stable.
 
-The plan includes the role and permission matrix, the data model, and the chat-transport decision (polling now, because serverless hosting cannot hold WebSocket connections).
+**Definition of done for each phase:** all its issues closed with acceptance criteria met, permission tests passing in CI, a manual end-to-end run recorded in the pull request, the accessibility audit re-run, and the report and diagrams updated (#97).
 
 ---
 
 ## 14. Screenshots and demo evidence
 
-> *Add screenshots before submission (each should be a real capture from the live site):*
+All screenshots were captured from the live site with headless Chromium on 19 November 2026. The admin screenshot is cropped above the user list so no private email addresses appear. Counts on the admin and roster screens include one throwaway demo volunteer that was deleted after capture.
 
-| # | Screenshot | Where to capture |
-|---|---|---|
-| 1 | Landing page (hero and features) | https://goodloop-pi.vercel.app |
-| 2 | `/events` with filters applied and the map | `/events?cause=ENVIRONMENT` |
-| 3 | Event detail page with Register button and map | `/events/<id>` |
-| 4 | Sign-up and login pages | `/signup`, `/login` |
-| 5 | Navbar: desktop user menu and mobile menu | any page, logged in |
-| 6 | My registrations and Profile | `/me`, `/me/profile` |
-| 7 | Organiser dashboard with stats and event cards | `/organiser` (logged in as organiser) |
-| 8 | Create event form with the map pin | `/organiser/new` |
-| 9 | Volunteer roster with CSV export | `/organiser/<id>/registrations` |
-| 10 | Admin panel: stats, pending organiser, user search | `/admin` (logged in as admin) |
-| 11 | Green CI check on a PR, and the Vercel "Ready" deployment | GitHub PR page, Vercel dashboard |
-| 12 | Neon tables (User, Event, Registration) | Neon console → Tables |
-| 13 | GitHub issues board for the organisations epic | https://github.com/Saransh-Jainbu/goodloop/issues/61 |
+**Public pages**
 
-**Demo script (5 minutes):** landing page → sign up as a volunteer and register for an event → see it in My registrations → log in as the organiser, publish an event and view the roster → log in as admin, approve an organiser and view stats → show the organisations plan.
+![1. Landing page hero](screenshots/01-landing.png)
+*1. Landing page: hero with a live product preview and the causes strip.*
 
-**Evidence available now:** live URL, GitHub repository with PR history, reviews and green CI runs, the issue board and milestones, the scripted test results in §9, and the organisations plan.
+![2. Landing page features](screenshots/02-landing-features.png)
+*2. Landing page: features and how it works.*
+
+![3. Events list](screenshots/03-events-list.png)
+*3. `/events`: search, filters, sort and event cards.*
+
+![4. Events map](screenshots/04-events-map.png)
+*4. `/events`: every event on an OpenStreetMap map.*
+
+![5. Filtered events](screenshots/05-events-filtered.png)
+*5. Filters in the URL (`?cause=HEALTH`), a shareable link.*
+
+![6. Event page](screenshots/06-event-detail.png)
+*6. Event page: details, spots left, register button, organiser card, add to calendar and copy link.*
+
+![20. Map popup](screenshots/20-map-popup.png)
+*20. Map popup showing cause, linked title, date and address.*
+
+![7. Sign-up](screenshots/07-signup.png)
+*7. Sign-up page.*
+
+![8. Login](screenshots/08-login.png)
+*8. Login page.*
+
+![9. Not found](screenshots/09-not-found.png)
+*9. Custom 404 page.*
+
+**Mobile**
+
+![10. Mobile menu](screenshots/10-mobile-menu.png)
+*10. Mobile navigation menu.*
+
+![11. Mobile events](screenshots/11-mobile-events.png)
+*11. Events list on a phone-sized screen.*
+
+**Volunteer**
+
+![12. Registered](screenshots/12-event-registered.png)
+*12. After registering: "You're registered", cancel option and spots taken.*
+
+![13. My registrations](screenshots/13-my-registrations.png)
+*13. My registrations with upcoming and past tabs.*
+
+![14. Profile](screenshots/14-profile.png)
+*14. Profile: edit name and change password.*
+
+![15. User menu](screenshots/15-user-menu.png)
+*15. User menu showing name, role and sign out.*
+
+**Organiser**
+
+![16. Organiser dashboard](screenshots/16-organiser-dashboard.png)
+*16. Organiser dashboard with stats and event cards.*
+
+![17. Create event](screenshots/17-create-event.png)
+*17. Create event form.*
+
+![21. Location picker](screenshots/21-location-picker.png)
+*21. Click-to-pin location picker with the chosen coordinates.*
+
+![18. Roster](screenshots/18-event-roster.png)
+*18. Volunteer roster with CSV export and remove controls.*
+
+**Admin**
+
+![19. Admin panel](screenshots/19-admin-panel.png)
+*19. Admin panel: platform stats, organiser approval and event removal (user list cropped).*
+
+**Other evidence**
+- Live site: https://goodloop-pi.vercel.app
+- Source, pull request history, reviews and CI runs: https://github.com/Saransh-Jainbu/goodloop
+- Issue tracker, milestones and the organisations epic: https://github.com/Saransh-Jainbu/goodloop/issues/61
+- Plan and design for the next phase: `docs/PLAN_ORGANISATIONS.md`
+
+**Still to add by the submitter (these need a login that only the team has):** a green CI run on a pull request, the Vercel deployment "Ready" page, the Neon console tables, and the project board.
+
+**Suggested demo script (5 minutes):** landing page, then sign up as a volunteer and register for an event, see it in My registrations, log in as the organiser to publish an event and view its roster, log in as admin to approve an organiser and view stats, and finish by showing the organisations plan and the issue board.
+
+---
+
+## Appendix A: Permission matrix (planned organisations)
+
+The specification for the permission tests. "Org Organiser" is the proposed extra role (section 2.4).
+
+| Action | Visitor | Member | Moderator | Org Organiser | Org Admin | Owner | Platform admin |
+|---|---|---|---|---|---|---|---|
+| View a public, verified organisation | yes | yes | yes | yes | yes | yes | yes |
+| Join (policy Open) or request (policy Request) | log in first | n/a | n/a | n/a | n/a | n/a | n/a |
+| Read announcements | public orgs only | yes | yes | yes | yes | yes | yes |
+| Read and send chat | no | yes | yes | yes | yes | yes | read only, for moderation |
+| Report content | no | yes | yes | yes | yes | yes | yes |
+| Delete any chat message, mute, ban from chat | no | no | yes | yes | yes | yes | yes |
+| Create and manage the organisation's events and see registrations | no | no | no | yes | yes | yes | no |
+| Post, edit, pin announcements | no | no | no | no | yes | yes | no |
+| Approve join requests, manage invites | no | no | no | no | yes | yes | no |
+| Change member roles (up to Organiser) | no | no | no | no | yes | yes | no |
+| Create Org Admins | no | no | no | no | no | yes | no |
+| Edit organisation settings | no | no | no | no | yes | yes | no |
+| Transfer ownership, archive the organisation | no | no | no | no | no | yes | no |
+| Verify, reject, suspend an organisation | no | no | no | no | no | no | yes |
+
+Rules: the last Owner cannot be demoted, removed or banned; nobody changes their own role; banned and pending people never count as members; a moderator cannot act on an admin or owner.
+
+## Appendix B: Planned screens (wireframes)
+
+These are low-fidelity sketches of how the planned screens will look, not screenshots.
+
+**Organisation profile (`/orgs/[slug]`)**
+```
++--------------------------------------------------------------+
+| [logo]  City Blood Bank Volunteers        VERIFIED   [ Join ]|
+| Health  Delhi   |  128 members  |  6 upcoming events         |
++--------------------------------------------------------------+
+| About | Events | Announcements | Chat (members only)         |
+|--------------------------------------------------------------|
+| PINNED  Monthly blood camp moved to Saturday ...             |
+| Upcoming: Blood Donation Camp - Sat 9:00 - 40 spots left     |
++--------------------------------------------------------------+
+```
+
+**Chat (`/orgs/[slug]/chat`)**
+```
++--------------------------------------------------------------+
+| City Blood Bank Volunteers - Chat              unread: 0     |
+|--------------------------------------------------------------|
+|  Today                                                       |
+|  Priya   Anyone bringing water bottles?            10:02     |
+|  Rahul   I can, bringing 20.                       10:04     |
+|  [new messages v]                                            |
+|--------------------------------------------------------------|
+| [ Type a message ...                         ]  [ Send ]     |
++--------------------------------------------------------------+
+   (Moderators see: delete, mute, ban on each message)
+```
+
+**Manage members (`/orgs/[slug]/manage/members`)**
+```
++--------------------------------------------------------------+
+| Members (128)   [ search ]          Requests (3)  Invites    |
+|--------------------------------------------------------------|
+| Name        Role           Joined       Actions              |
+| Asha        Owner          Jan 2026     (owner)              |
+| Rahul       Organiser      Feb 2026     [Role v] [Remove]    |
+| Priya       Member         Mar 2026     [Role v] [Ban]       |
++--------------------------------------------------------------+
+```
