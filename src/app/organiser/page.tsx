@@ -136,7 +136,7 @@ export default async function OrganiserPage({
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Events</CardTitle>
+              <CardTitle as="h2" className="text-sm font-medium">Total Events</CardTitle>
               <CalendarDays className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -147,7 +147,7 @@ export default async function OrganiserPage({
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Published</CardTitle>
+              <CardTitle as="h2" className="text-sm font-medium">Published</CardTitle>
               <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
             </CardHeader>
             <CardContent>
@@ -158,7 +158,7 @@ export default async function OrganiserPage({
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Registrations</CardTitle>
+              <CardTitle as="h2" className="text-sm font-medium">Registrations</CardTitle>
               <Users className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
@@ -169,7 +169,7 @@ export default async function OrganiserPage({
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Drafts</CardTitle>
+              <CardTitle as="h2" className="text-sm font-medium">Drafts</CardTitle>
               <FileText className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>

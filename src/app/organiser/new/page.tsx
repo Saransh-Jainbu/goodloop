@@ -21,7 +21,7 @@ export default async function NewEventPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-xl">Create New Opportunity</CardTitle>
+          <CardTitle as="h1" className="text-xl">Create New Opportunity</CardTitle>
           <p className="text-sm text-muted-foreground">
             Fill in the details below to list a new volunteering opportunity.
           </p>

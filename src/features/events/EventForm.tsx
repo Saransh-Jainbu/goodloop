@@ -64,7 +64,7 @@ export function EventForm({
         <CardHeader>
           <div className="flex items-center gap-2">
             <FileText className="h-5 w-5 text-primary" />
-            <CardTitle className="text-base font-semibold">
+            <CardTitle as="h2" className="text-base font-semibold">
               1. Basic Information
             </CardTitle>
           </div>
@@ -156,7 +156,7 @@ export function EventForm({
         <CardHeader>
           <div className="flex items-center gap-2">
             <CalendarDays className="h-5 w-5 text-primary" />
-            <CardTitle className="text-base font-semibold">
+            <CardTitle as="h2" className="text-base font-semibold">
               2. Date, Time & Location
             </CardTitle>
           </div>
@@ -258,7 +258,7 @@ export function EventForm({
         <CardHeader>
           <div className="flex items-center gap-2">
             <Users className="h-5 w-5 text-primary" />
-            <CardTitle className="text-base font-semibold">
+            <CardTitle as="h2" className="text-base font-semibold">
               3. Capacity & Visibility
             </CardTitle>
           </div>
