@@ -1,16 +1,18 @@
+import { useId } from "react";
 import { cn } from "@/lib/utils";
 
 /** GoodLoop mark: a loop (the "loop" of giving back) with a heart in the centre. */
 export function LogoMark({ className }: { className?: string }) {
+  const gid = `gl-g-${useId().replace(/:/g, "")}`; // unique per instance so ids never repeat on a page
   return (
     <svg viewBox="0 0 32 32" aria-hidden className={cn("h-8 w-8", className)}>
       <defs>
-        <linearGradient id="gl-g" x1="0" y1="0" x2="1" y2="1">
+        <linearGradient id={gid} x1="0" y1="0" x2="1" y2="1">
           <stop offset="0" stopColor="#34d399" />
           <stop offset="1" stopColor="#047857" />
         </linearGradient>
       </defs>
-      <rect width="32" height="32" rx="9" fill="url(#gl-g)" />
+      <rect width="32" height="32" rx="9" fill={`url(#${gid})`} />
       <path
         d="M16 7.5a8.5 8.5 0 1 0 8.2 6.3"
         fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round"
