@@ -179,9 +179,12 @@ export async function declineRegistration(eventId: string, registrationId: strin
     throw new Error("Unauthorized: you can only manage registrations for your own events.");
   }
 
-  await db.registration.delete({
-    where: { id: registrationId },
+  const result = await db.registration.deleteMany({
+    where: { id: registrationId, eventId },
   });
+  if (result.count === 0) {
+    throw new Error("Registration not found for this event.");
+  }
 
   revalidatePath(`/organiser/${eventId}/registrations`);
   revalidatePath("/organiser");

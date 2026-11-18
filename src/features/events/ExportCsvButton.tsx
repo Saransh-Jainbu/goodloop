@@ -5,6 +5,9 @@ import { Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { RegistrationWithUser } from "@/features/registrations/queries";
 
+import { sanitizeForCsv } from "./csv";
+export { sanitizeForCsv };
+
 export function ExportCsvButton({
   eventTitle,
   registrations,
@@ -18,8 +21,8 @@ export function ExportCsvButton({
     const headers = ["Registration ID", "Volunteer Name", "Email Address", "Registered At"];
     const rows = registrations.map((r) => [
       r.id,
-      `"${(r.userName ?? "Anonymous").replace(/"/g, '""')}"`,
-      `"${r.userEmail.replace(/"/g, '""')}"`,
+      `"${sanitizeForCsv(r.userName ?? "Anonymous").replace(/"/g, '""')}"`,
+      `"${sanitizeForCsv(r.userEmail).replace(/"/g, '""')}"`,
       `"${new Date(r.createdAt).toISOString()}"`,
     ]);
 

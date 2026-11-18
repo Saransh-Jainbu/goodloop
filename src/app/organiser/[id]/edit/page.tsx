@@ -31,7 +31,7 @@ export default async function EditEventPage({
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-xl">Edit Opportunity</CardTitle>
+          <CardTitle as="h1" className="text-xl">Edit Opportunity</CardTitle>
           <p className="text-sm text-muted-foreground">
             Update the details for &ldquo;{event.title}&rdquo;.
           </p>
