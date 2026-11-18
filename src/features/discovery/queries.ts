@@ -1,8 +1,8 @@
-// OWNER: Anousha. Contract: getEvents(filters), getEventById(id).
-// Signatures are fixed. Backed by local fake data until the full Event model
-// (Aditya's event.prisma) lands; then swap the bodies for Prisma queries.
+// OWNER: Anousha. Contract: getEvents(filters), getEventById(id). Signatures are fixed.
+// Public discovery only ever shows PUBLISHED events (drafts and cancelled events stay hidden).
+import type { Prisma } from "@prisma/client";
+import { db } from "@/lib/db";
 import type { Cause, Event } from "@/features/events/types";
-import { FAKE_EVENTS } from "./fake-data";
 
 export type EventFilters = { cause?: Cause; from?: string; to?: string; location?: string };
 
@@ -11,19 +11,21 @@ const endOfDay = (iso: string) => new Date(`${iso}T23:59:59.999`);
 
 export async function getEvents(filters: EventFilters = {}): Promise<Event[]> {
   const { cause, from, to, location } = filters;
-  const needle = location?.trim().toLowerCase();
-  const fromDate = from ? startOfDay(from) : undefined;
-  const toDate = to ? endOfDay(to) : undefined;
+  const needle = location?.trim();
 
-  return FAKE_EVENTS.filter((e) => {
-    if (cause && e.cause !== cause) return false;
-    if (fromDate && e.startsAt < fromDate) return false;
-    if (toDate && e.startsAt > toDate) return false;
-    if (needle && !e.address.toLowerCase().includes(needle)) return false;
-    return true;
-  }).sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime());
+  const where: Prisma.EventWhereInput = { status: "PUBLISHED" };
+  if (cause) where.cause = cause;
+  if (from || to) {
+    where.startsAt = {
+      ...(from ? { gte: startOfDay(from) } : {}),
+      ...(to ? { lte: endOfDay(to) } : {}),
+    };
+  }
+  if (needle) where.address = { contains: needle, mode: "insensitive" };
+
+  return db.event.findMany({ where, orderBy: { startsAt: "asc" } });
 }
 
 export async function getEventById(id: string): Promise<Event | null> {
-  return FAKE_EVENTS.find((e) => e.id === id) ?? null;
+  return db.event.findFirst({ where: { id, status: "PUBLISHED" } });
 }
