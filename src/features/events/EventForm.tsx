@@ -28,10 +28,12 @@ export function EventForm({
   submitLabel?: string;
 }) {
   const [state, formAction, pending] = useActionState(action, undefined);
-  const [location, setLocation] = useState<LatLng>({
-    lat: event?.lat ?? 53.4808,
-    lng: event?.lng ?? -2.2426,
-  });
+  // Start with no default pin on new events; require organiser to select location
+  const [location, setLocation] = useState<LatLng | null>(
+    event?.lat !== undefined && event?.lng !== undefined
+      ? { lat: event.lat, lng: event.lng }
+      : null
+  );
 
   return (
     <form action={formAction} className="space-y-6">
@@ -84,6 +86,7 @@ export function EventForm({
           name="description"
           defaultValue={event?.description ?? ""}
           rows={4}
+          maxLength={5000}
           placeholder="Describe the opportunity, what volunteers will do, and what to bring..."
           required
           className="flex min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -130,6 +133,7 @@ export function EventForm({
           name="address"
           defaultValue={event?.address ?? ""}
           placeholder="e.g. Central Library, 10 Main Street"
+          maxLength={200}
           required
         />
         {state?.fieldErrors?.address && (
@@ -139,13 +143,15 @@ export function EventForm({
 
       {/* Map Coordinates */}
       <div className="space-y-2">
-        <Label>Pin Location</Label>
+        <Label>Pin Location *</Label>
         <p className="text-xs text-muted-foreground">
-          Click the map to place the location pin (Coordinates: {location.lat.toFixed(4)}, {location.lng.toFixed(4)})
+          {location
+            ? `Selected coordinates: ${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}`
+            : "Click on the map to set the event location pin"}
         </p>
-        <LocationPicker value={location} onChange={setLocation} />
-        <input type="hidden" name="lat" value={location.lat} />
-        <input type="hidden" name="lng" value={location.lng} />
+        <LocationPicker value={location ?? undefined} onChange={setLocation} />
+        <input type="hidden" name="lat" value={location?.lat ?? ""} />
+        <input type="hidden" name="lng" value={location?.lng ?? ""} />
         {(state?.fieldErrors?.lat || state?.fieldErrors?.lng) && (
           <p className="text-xs text-destructive">
             {state.fieldErrors.lat ?? state.fieldErrors.lng}
@@ -161,6 +167,7 @@ export function EventForm({
           name="capacity"
           type="number"
           min={1}
+          max={100000}
           defaultValue={event?.capacity ?? ""}
           placeholder="Leave blank for unlimited"
         />

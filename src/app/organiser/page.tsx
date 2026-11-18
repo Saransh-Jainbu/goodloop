@@ -1,10 +1,10 @@
 // OWNER: Aditya. Organiser dashboard listing all events owned by current user.
 import Link from "next/link";
 import { format } from "date-fns";
-import { CalendarDays, MapPin, Plus, Users } from "lucide-react";
+import { CalendarDays, MapPin, Plus, Users, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { deleteEvent } from "@/features/events/actions";
+import { DeleteEventButton } from "@/features/events/DeleteEventButton";
 import { getOrganiserEvents } from "@/features/events/queries";
 import { requireRole } from "@/lib/session";
 
@@ -15,8 +15,12 @@ export default async function OrganiserPage({
 }) {
   const user = await requireRole("ORGANISER");
   const params = await searchParams;
-  const isPending = user.organiserStatus !== "APPROVED" || params.pending === "1";
-  const events = isPending ? [] : await getOrganiserEvents(user.id);
+
+  const isApproved = user.organiserStatus === "APPROVED";
+  const isRejected = user.organiserStatus === "REJECTED";
+  const isPending = !isApproved && !isRejected;
+
+  const events = isApproved ? await getOrganiserEvents(user.id) : [];
 
   return (
     <div className="space-y-6">
@@ -28,7 +32,7 @@ export default async function OrganiserPage({
           </p>
         </div>
 
-        {!isPending && (
+        {isApproved && (
           <Link href="/organiser/new">
             <Button className="flex items-center gap-2">
               <Plus className="h-4 w-4" />
@@ -38,19 +42,34 @@ export default async function OrganiserPage({
         )}
       </div>
 
-      {/* Account Status Banner */}
+      {/* Account Rejected Banner */}
+      {isRejected && (
+        <div className="flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-destructive">
+          <XCircle className="mt-0.5 h-5 w-5 shrink-0" />
+          <div>
+            <h2 className="font-semibold">Account Application Rejected</h2>
+            <p className="mt-1 text-sm">
+              Your organiser account has been reviewed and rejected by an administrator.
+              You cannot list or manage events at this time.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Account Pending Approval Banner */}
       {isPending && (
         <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4 text-yellow-900 dark:border-yellow-900/40 dark:bg-yellow-950/20 dark:text-yellow-200">
           <h2 className="font-semibold">Account Pending Approval</h2>
           <p className="mt-1 text-sm text-yellow-800 dark:text-yellow-300">
-            Your organiser account is currently pending review by an administrator.
-            Once approved, you will be able to create listings and manage volunteer events.
+            {params.pending === "1"
+              ? "You must be approved by an administrator before creating or managing listings."
+              : "Your organiser account is currently pending review by an administrator. Once approved, you will be able to create listings and manage volunteer events."}
           </p>
         </div>
       )}
 
       {/* Events List */}
-      {!isPending && (
+      {isApproved && (
         <section aria-labelledby="events-heading" className="space-y-4">
           <h2 id="events-heading" className="text-lg font-semibold">
             My Events ({events.length})
@@ -89,7 +108,9 @@ export default async function OrganiserPage({
                       className={`rounded px-2 py-0.5 text-xs font-medium ${
                         event.status === "PUBLISHED"
                           ? "bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300"
-                          : "bg-muted text-muted-foreground"
+                          : event.status === "CANCELLED"
+                            ? "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300"
+                            : "bg-muted text-muted-foreground"
                       }`}
                     >
                       {event.status}
@@ -126,11 +147,7 @@ export default async function OrganiserPage({
                           Edit
                         </Button>
                       </Link>
-                      <form action={deleteEvent.bind(null, event.id)}>
-                        <Button variant="destructive" size="sm" type="submit">
-                          Delete
-                        </Button>
-                      </form>
+                      <DeleteEventButton eventId={event.id} />
                     </div>
                   </CardContent>
                 </Card>

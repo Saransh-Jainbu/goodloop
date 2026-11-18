@@ -12,7 +12,8 @@ export const eventSchema = z
     description: z
       .string()
       .trim()
-      .min(10, "Description must be at least 10 characters"),
+      .min(10, "Description must be at least 10 characters")
+      .max(5000, "Description cannot exceed 5000 characters"),
     cause: z.enum(CAUSES, {
       errorMap: () => ({ message: "Please select a valid cause" }),
     }),
@@ -24,19 +25,36 @@ export const eventSchema = z
         (val) => (val === "" || val === null || val === undefined ? null : val),
         z.coerce.date().nullable().optional()
       ),
-    address: z.string().trim().min(3, "Address is required"),
-    lat: z.coerce
-      .number()
-      .min(-90, "Latitude must be between -90 and 90")
-      .max(90, "Latitude must be between -90 and 90"),
-    lng: z.coerce
-      .number()
-      .min(-180, "Longitude must be between -180 and 180")
-      .max(180, "Longitude must be between -180 and 180"),
+    address: z
+      .string()
+      .trim()
+      .min(3, "Address is required")
+      .max(200, "Address cannot exceed 200 characters"),
+    lat: z.preprocess(
+      (val) => (val === "" || val === null || val === undefined ? undefined : Number(val)),
+      z
+        .number({ required_error: "Please select a location on the map" })
+        .min(-90, "Latitude must be between -90 and 90")
+        .max(90, "Latitude must be between -90 and 90")
+    ),
+    lng: z.preprocess(
+      (val) => (val === "" || val === null || val === undefined ? undefined : Number(val)),
+      z
+        .number({ required_error: "Please select a location on the map" })
+        .min(-180, "Longitude must be between -180 and 180")
+        .max(180, "Longitude must be between -180 and 180")
+    ),
     capacity: z
       .preprocess(
         (val) => (val === "" || val === null || val === undefined ? null : val),
-        z.coerce.number().int("Capacity must be a whole number").positive("Capacity must be greater than 0").nullable().optional()
+        z
+          .coerce
+          .number()
+          .int("Capacity must be a whole number")
+          .positive("Capacity must be greater than 0")
+          .max(100000, "Capacity cannot exceed 100,000")
+          .nullable()
+          .optional()
       ),
     status: z.enum(EVENT_STATUSES).optional().default("PUBLISHED"),
   })
