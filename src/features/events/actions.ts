@@ -7,6 +7,25 @@ import { db } from "@/lib/db";
 import { requireApprovedOrganiser } from "@/lib/session";
 import { eventSchema, type EventActionState } from "./schema";
 
+function extractErrors(parsedError: import("zod").ZodError): {
+  error: string;
+  fieldErrors: Record<string, string>;
+} {
+  const fieldErrors: Record<string, string> = {};
+  let generalError = "Please correct the errors in the form.";
+
+  for (const issue of parsedError.issues) {
+    if (issue.path.length > 0) {
+      const key = String(issue.path[0]);
+      if (!fieldErrors[key]) fieldErrors[key] = issue.message;
+    } else {
+      generalError = issue.message;
+    }
+  }
+
+  return { error: generalError, fieldErrors };
+}
+
 export async function createEvent(
   _prevState: EventActionState,
   formData: FormData
@@ -17,15 +36,7 @@ export async function createEvent(
   const parsed = eventSchema.safeParse(raw);
 
   if (!parsed.success) {
-    const fieldErrors: Record<string, string> = {};
-    for (const issue of parsed.error.issues) {
-      const key = String(issue.path[0]);
-      if (!fieldErrors[key]) fieldErrors[key] = issue.message;
-    }
-    return {
-      error: "Please correct the errors in the form.",
-      fieldErrors,
-    };
+    return extractErrors(parsed.error);
   }
 
   try {
@@ -74,15 +85,7 @@ export async function updateEvent(
   const parsed = eventSchema.safeParse(raw);
 
   if (!parsed.success) {
-    const fieldErrors: Record<string, string> = {};
-    for (const issue of parsed.error.issues) {
-      const key = String(issue.path[0]);
-      if (!fieldErrors[key]) fieldErrors[key] = issue.message;
-    }
-    return {
-      error: "Please correct the errors in the form.",
-      fieldErrors,
-    };
+    return extractErrors(parsed.error);
   }
 
   try {
