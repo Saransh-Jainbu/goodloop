@@ -27,6 +27,11 @@ Owner: Saransh. Vercel project is linked to the GitHub repo; `main` auto-deploys
 4. Migrations: `vercel-build` runs `prisma migrate deploy` **only** when `VERCEL_ENV=production`, so previews never touch the production schema. Commit migration folders; never run `migrate dev` against production.
 5. Keep `main` deployable: a failing build blocks the deploy, so run `pnpm lint && pnpm typecheck && pnpm build` before opening a PR.
 
+## CI & pull requests
+- `.github/workflows/ci.yml` runs on every PR to `main`: `prisma validate`, `pnpm lint`, `pnpm typecheck`, `next build` (dummy env, no DB needed).
+- In GitHub branch protection for `main`, require the **Lint, typecheck, build** check plus 1 approval and code-owner review.
+- PRs use `.github/pull_request_template.md`; fill every checkbox honestly.
+
 ## Scripts
 `dev`, `build`, `lint`, `typecheck`, `db:migrate`, `db:studio`, `db:seed`
 

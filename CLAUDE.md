@@ -61,6 +61,9 @@ Stub versions already exist so everything compiles; owners replace the internals
 ## Git workflow
 Branch per task named `name/short-task`; PRs only into `main` (1 approval, squash merge); keep PRs under ~300 lines; before a PR run `git fetch && git rebase origin/main`, then `pnpm lint && pnpm typecheck && pnpm build`. Don't push to `main` directly. On a lockfile conflict take `main`'s version and run `pnpm install`.
 
+## PR format
+Use `.github/pull_request_template.md`: what and why, requirement ID, changes, screenshots for UI, and the checklist. CI (`.github/workflows/ci.yml`) must pass: prisma validate, lint, typecheck, build. Don't merge or ask to merge a red PR.
+
 ## Commands
 `pnpm dev` · `pnpm lint` · `pnpm typecheck` · `pnpm build` · `pnpm db:migrate` · `pnpm db:seed` · `pnpm db:studio`
 
