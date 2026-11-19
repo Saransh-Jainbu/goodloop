@@ -1,7 +1,8 @@
 # GoodLoop: Project Report (Mid-Evaluation Submission)
 
 **Course:** CSET400C Capstone  
-**Team:** Saransh (setup, auth, admin, registrations, maps, design system, deployment) · Aditya (events and organiser side) · Anousha (discovery and event pages) · Samaksh (not contributing for now; his areas moved to Saransh)  
+**Team:** Saransh (setup, auth, admin, registrations, maps, design system, deployment) · Aditya (events and organiser side) · Anousha (discovery and event pages) · Samaksh (Milestone 2 LaTeX report, presentation deck, live UAT & documentation)
+  
 **Live prototype:** https://goodloop-pi.vercel.app  
 **Source code:** https://github.com/Saransh-Jainbu/goodloop (MIT licensed)  
 **Last updated:** 19 November 2026
@@ -680,7 +681,7 @@ Feedback will also be used to confirm which organisation features matter most.
 | Privacy of member data | Medium | High | Disclosure before joining, option to hide from lists, account deletion, data export (#91) |
 | Polling load on the database and free-tier limits | Medium | Medium | Poll only while the tab is visible, indexed queries, small pages; load check before sign-off; managed real-time service as a fallback |
 | Scope growth (about 36 new tasks) | Medium | Medium | Independent, demoable phases; team sign-off recorded on #62; phases 1 and 2 are the must-have core |
-| A team member is not contributing | Medium | Medium | Samaksh's areas were reassigned and built; issue owners can be rebalanced; sizes are visible on the board |
+| Rebalanced team workload | Low | Medium | Initial coding areas were reassigned and built by Saransh; Samaksh owns Milestone 2 reporting, presentation deliverables, and manual UAT/QA |
 | Open role-hierarchy decision (org-level Organiser, relationship to platform organisers) | Medium | Medium | Questions posted on #62; the permission matrix is written so one more role is a small change |
 | Local development and tests ran against the production database | Medium | High | **Open.** A separate Neon dev and test branch is being set up; tests will refuse to run against production |
 | A database password was pasted into chat during setup | Medium | High | **Open.** Rotate the credential; never commit `.env*` (the history was scanned and is clean) |
@@ -737,7 +738,8 @@ Measured with `curl` against the live site on 19 November 2026 from one location
 | Saransh | 16 | Setup and deployment, auth and profile, admin, registrations, maps, design system, landing page, seed, tests, SEO, security and accessibility fixes, plan and report |
 | Aditya | 3 | Event model, organiser dashboard and forms, event status and duplication, roster and CSV export, security and accessibility fixes (#33, #58, #111) |
 | Anousha | 3 | Discovery UI, search, sort, pagination, event page redesign, calendar download, Recommended sort (#31, #102, #110) |
-| Samaksh | 0 | No contributions so far; his areas were reassigned and built |
+| Samaksh | 2 | Milestone 2 LaTeX report compilation, evaluation presentation deck, SDG/rubric alignment, and live deployment UAT|
+ 
 
 ### 13.3 Remaining for the final evaluation
 
